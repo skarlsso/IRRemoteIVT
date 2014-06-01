@@ -1,4 +1,4 @@
-# IVT Nordic Inverter Arduino IR Remote Control
+## IVT Nordic Inverter Arduino IR Remote Control
 
 Control the IVT Nordic Inverter heat pump by sending commands to the serial port of a SparkFun Pro Micro Arduino board [1]. Together with an Internet connected device, like a Raspberry Pi, this could be used to control the heat pump remotely.
 
