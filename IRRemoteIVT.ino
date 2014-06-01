@@ -9,7 +9,7 @@
 // Example commands:
 //  "on"      - Turn on the heat pump
 //  "off"     - Turn off the heat pump
-//  "warm"    - Turn on the heating mode
+//  "heat"    - Turn on the heating mode
 //  "fan"     - Turn on the fan with the heating element turned off
 //  "temp +"  - Increase the temperature one degree.
 //  "temp -"  - Decrease the temperature one degree.
@@ -66,7 +66,7 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 
 // Values for bs_mode
 #define MODE_FAN  0b00
-#define MODE_WARM 0b10
+#define MODE_HEAT 0b10
 #define MODE_COOL 0b01
 #define MODE_DROP 0b11
 
@@ -94,7 +94,8 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 
 
 // String helpers
-#define strequals(str, str_literal, len) (len == (sizeof(str_literal) - 1 /* '\0' */) && strncmp(str, str_literal, len) == 0)
+#define str_equals(str, str_literal, len) (len == (sizeof(str_literal) - 1 /* '\0' */) && strncmp(str, str_literal, len) == 0)
+#define str_begins(str, str_literal, len) (strncmp(str, str_literal, len) == 0)
 
 // The IR data package.
 //
@@ -353,7 +354,7 @@ void execute_ion(char *buffer, int length) {
 
 byte mode_uses_absolute_time() {
    byte mode = get_ir_data(bs_mode);
-  return mode == MODE_WARM || mode == MODE_COOL;
+  return mode == MODE_HEAT || mode == MODE_COOL;
 }
 int max_temp_for_mode() {
   return mode_uses_absolute_time() ? 32 : 2;
@@ -464,9 +465,9 @@ void execute_clean(char *buffer, int length) {
     } else {
       // Don't know.
     }
-  } else if (strequals(buffer, "on", length)) {
+  } else if (str_equals(buffer, "on", length)) {
     new_value = CLEAN_ON;
-  } else if (strequals(buffer, "off", length)) {
+  } else if (str_equals(buffer, "off", length)) {
     new_value = CLEAN_OFF;
   } else {
     // Illegal argument
@@ -508,7 +509,7 @@ void execute_mode_selected(char* buffer, int length, byte mode) {
   set_ir_data(bs_mode, mode);
 
   // The remote sets the temp when changing modes. Is this needed/wanted?.
-  if (mode == MODE_WARM) {  
+  if (mode == MODE_HEAT) {  
     set_ir_data(bs_abs_temp, 23 - 17);
   } else if (mode == MODE_COOL) {
     set_ir_data(bs_abs_temp, 26 - 17);
@@ -523,10 +524,9 @@ void execute_mode_selected(char* buffer, int length, byte mode) {
   ir_data_finalize_and_send(STATE_CMD);
 }
 
-// Turn on Warm mode.
-// FIXME: Rename to Heat mode.
-void execute_warm(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_WARM);
+// Turn on Heat mode.
+void execute_heat(char *buffer, int length) {
+  execute_mode_selected(buffer, length, MODE_HEAT);
 }
 
 // Turn on Cool mode.
@@ -580,9 +580,9 @@ void execute_rotate(char *buffer, int length) {
     } else if (old_value == ROTATE_SWING) {
       new_value = ROTATE_ON;
     }
-  } else if (strequals(buffer, "on", length)) {
+  } else if (str_equals(buffer, "on", length)) {
     new_value = ROTATE_ON;
-  } else if (strequals(buffer, "off", length)) {
+  } else if (str_equals(buffer, "off", length)) {
     new_value = ROTATE_OFF;
   }
     
@@ -615,12 +615,12 @@ void execute_full_effect(char *buffer, int length) {
       // Do nothing when the IVT is off.
     }
   
-  } else if (strequals(buffer, "on", length)) {
+  } else if (str_equals(buffer, "on", length)) {
     if (old_value != STATE_OFF) {
       new_value = STATE_FULL_EFFECT_ON;
     }
   
-  } else if (strequals(buffer, "off", length)) {
+  } else if (str_equals(buffer, "off", length)) {
     if (old_value == STATE_FULL_EFFECT_ON) {
       new_value = STATE_FULL_EFFECT_OFF;
     }
@@ -657,16 +657,16 @@ void execute_strength(char *buffer, int length) {
                 old_value == STRENGTH_FAST   ? STRENGTH_AUTO   :
                 /* Fallback */                 STRENGTH_AUTO;
   
-  } else if (strequals(buffer, "slow", length)) {
+  } else if (str_equals(buffer, "slow", length)) {
     new_value = STRENGTH_SLOW;
     
-  } else if (strequals(buffer, "medium", length)) {
+  } else if (str_equals(buffer, "medium", length)) {
     new_value = STRENGTH_MEDIUM;
 
-  } else if (strequals(buffer, "fast", length)) {
+  } else if (str_equals(buffer, "fast", length)) {
     new_value = STRENGTH_FAST;
 
-  } else if (strequals(buffer, "auto", length)) {
+  } else if (str_equals(buffer, "auto", length)) {
     new_value = STRENGTH_AUTO;
   
   } else {
@@ -685,7 +685,7 @@ void execute_command(char *buffer, int length) {
   #define execute_command_cond(command_str, command)                            \
     do {                                                                        \
       int command_str_len = strlen(command_str);                                \
-      if (strncmp(buffer, command_str, command_str_len) == 0) {                 \
+      if (str_begins(buffer, command_str, command_str_len)) {                   \
         Serial1.println("Executing: " command_str);                             \
         execute_##command(buffer + command_str_len, length - command_str_len);  \
         return;                                                                 \
@@ -699,7 +699,7 @@ void execute_command(char *buffer, int length) {
   execute_command_cond("ion",      ion);
   execute_command_cond("clean",    clean);
   execute_command_cond("TIMER",    timer);
-  execute_command_cond("warm",     warm);
+  execute_command_cond("heat",     heat);
   execute_command_cond("cool",     cool);
   execute_command_cond("fan",      fan);
   execute_command_cond("drop",     drop);
