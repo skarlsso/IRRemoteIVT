@@ -92,6 +92,10 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define STRENGTH_FAST   0b111
 #define STRENGTH_AUTO   0b010
 
+
+// String helpers
+#define strequals(str, str_literal, len) (len == (sizeof(str_literal) - 1 /* '\0' */) && strncmp(str, str_literal, len) == 0)
+
 // The IR data package.
 //
 // Bytes containing the state which will be send upon request.
@@ -460,9 +464,9 @@ void execute_clean(char *buffer, int length) {
     } else {
       // Don't know.
     }
-  } else if (length == 2 && strncmp(buffer, "on", length) == 0) {
+  } else if (strequals(buffer, "on", length)) {
     new_value = CLEAN_ON;
-  } else if (length == 3 && strncmp(buffer, "off", length) == 0) {
+  } else if (strequals(buffer, "off", length)) {
     new_value = CLEAN_OFF;
   } else {
     // Illegal argument
@@ -576,9 +580,9 @@ void execute_rotate(char *buffer, int length) {
     } else if (old_value == ROTATE_SWING) {
       new_value = ROTATE_ON;
     }
-  } else if (length == 2 && strncmp(buffer, "on", length) == 0) {
+  } else if (strequals(buffer, "on", length)) {
     new_value = ROTATE_ON;
-  } else if (length == 3 && strncmp(buffer, "off", length) == 0) {
+  } else if (strequals(buffer, "off", length)) {
     new_value = ROTATE_OFF;
   }
     
@@ -611,12 +615,12 @@ void execute_full_effect(char *buffer, int length) {
       // Do nothing when the IVT is off.
     }
   
-  } else if (length == 2 && strncmp(buffer, "on", length) == 0) {
+  } else if (strequals(buffer, "on", length)) {
     if (old_value != STATE_OFF) {
       new_value = STATE_FULL_EFFECT_ON;
     }
   
-  } else if (length == 3 && strncmp(buffer, "off", length) == 0) {
+  } else if (strequals(buffer, "off", length)) {
     if (old_value == STATE_FULL_EFFECT_ON) {
       new_value = STATE_FULL_EFFECT_OFF;
     }
@@ -653,16 +657,16 @@ void execute_strength(char *buffer, int length) {
                 old_value == STRENGTH_FAST   ? STRENGTH_AUTO   :
                 /* Fallback */                 STRENGTH_AUTO;
   
-  } else if (length == 4 && strncmp(buffer, "slow", length) == 0) {
+  } else if (strequals(buffer, "slow", length)) {
     new_value = STRENGTH_SLOW;
     
-  } else if (length == 6 && strncmp(buffer, "medium", length) == 0) {
+  } else if (strequals(buffer, "medium", length)) {
     new_value = STRENGTH_MEDIUM;
 
-  } else if (length == 4 && strncmp(buffer, "fast", length) == 0) {
+  } else if (strequals(buffer, "fast", length)) {
     new_value = STRENGTH_FAST;
 
-  } else if (length == 4 && strncmp(buffer, "auto", length) == 0) {
+  } else if (strequals(buffer, "auto", length)) {
     new_value = STRENGTH_AUTO;
   
   } else {
