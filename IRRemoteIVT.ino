@@ -7,14 +7,14 @@
 // Pin 1 => Serial Port rx
 //
 // Example commands:
-//  "on"      - Turn on the heat pump
-//  "off"     - Turn off the heat pump
-//  "heat"    - Turn on the heating mode
-//  "fan"     - Turn on the fan with the heating element turned off
+//  "on"      - Turn on the heat pump.
+//  "off"     - Turn off the heat pump.
+//  "heat"    - Turn on the heating mode.
+//  "fan"     - Turn on the fan with the heating element turned off.
 //  "temp +"  - Increase the temperature one degree.
 //  "temp -"  - Decrease the temperature one degree.
 //  "temp 25" - Set the temperature to 25 degrees.
-//  "full on" - Turn on full effect
+//  "full on" - Turn on full effect.
 //   ... and more
 //
 // @author Stefan Karlsson (skarlsso@github)
@@ -742,6 +742,25 @@ void execute_strength(char *buffer, int length) {
   ir_data_finalize_and_send(STATE_CMD);
 }
 
+void execute_help(char *buffer, int length) {
+  Serial1.println("Commands:");
+  Serial1.println("  help  - Print this help text");
+  Serial1.println("  on    - Turn on the device");
+  Serial1.println("  off   - Turn off the device");
+  Serial1.println("  heat  - Turn on heat mode");
+  Serial1.println("  cool  - Turn on cool mode");
+  Serial1.println("  fan   - Turn on fan mode");
+  Serial1.println("  dry   - Turn on dry mode");
+  Serial1.println("  swing - Start or stop the swing");
+  Serial1.println("  ion      [on|off] - Toggle or turn on/off ion mode");
+  Serial1.println("  clean    [on|off] - Toggle or turn on/off clean mode.");
+  Serial1.println("  full     [on|off] - Toggle or turn on/off full-effect mode");
+  Serial1.println("  rotate   [on|off] - Turn on/off auto rotate mode?");
+  Serial1.println("  mode     [heat|cool|fan|dry]     - Cycle through or select mode");
+  Serial1.println("  strength [slow|medium|fast|auto] - Cycle through or select fan speed");
+  Serial1.println("  temp     <+|-|absolute value (18 to 32)|relative value (-2 to 2)]>");
+}
+
 void execute_command(char *buffer, int length) {
   #define execute_command_cond(command_str, command)                            \
     do {                                                                        \
@@ -769,6 +788,7 @@ void execute_command(char *buffer, int length) {
   execute_command_cond("rotate",   rotate);
   execute_command_cond("full",     full_effect);
   execute_command_cond("strength", strength);
+  execute_command_cond("help",     help);
 
   Serial1.print("No such command: ");
   Serial1.println(buffer);
