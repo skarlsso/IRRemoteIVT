@@ -498,14 +498,7 @@ void execute_timer(char *buffer, int length) {
 }
 
 // Turn on the selected mode.
-void execute_mode_selected(char* buffer, int length, byte mode) {
-  TRIM(buffer, length);
-  
-  if (length != 0) {
-    // Unexpected arguments. 
-    return; 
-  }
-  
+void execute_mode_selected(byte mode) {
   set_ir_data(bs_mode, mode);
 
   // The remote sets the temp when changing modes. Is this needed/wanted?.
@@ -526,31 +519,53 @@ void execute_mode_selected(char* buffer, int length, byte mode) {
 
 // Turn on Heat mode.
 void execute_heat(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_HEAT);
+  execute_mode_selected(MODE_HEAT);
 }
 
 // Turn on Cool mode.
 void execute_cool(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_COOL);
+  execute_mode_selected(MODE_COOL);
 }
 
 // Turn on Fan mode.
 void execute_fan(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_FAN);
+  execute_mode_selected(MODE_FAN);
 }
 
 // Turn on Dry mode.
 void execute_dry(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_DRY);
+  execute_mode_selected(MODE_DRY);
 }
 
 // Cycle through the modes.
-// FIXME: Add possibility to use named parameters.
 void execute_mode(char* buffer, int length) {
-  byte mode = get_ir_data(bs_mode);
-  // Cycle throuh to the next mode.
-  mode = (mode + 1) & 0b11;
-  execute_mode_selected(buffer, length, mode);
+  TRIM(buffer, length);
+  
+  byte old_value = get_ir_data(bs_mode);
+  byte new_value;
+  
+  if (length == 0) {
+    // Cycle through the modes.
+    new_value = (old_value + 1) & 0b11;
+  
+  } else if (str_equals(buffer, "fan", length)) {
+    new_value = MODE_FAN;
+    
+  } else if (str_equals(buffer, "heat", length)) {
+    new_value = MODE_HEAT;
+    
+  } else if (str_equals(buffer, "cool", length)) {
+    new_value = MODE_COOL;
+
+  } else if (str_equals(buffer, "dry", length)) {
+    new_value = MODE_DRY;
+
+  } else {
+    // Illegal argument.
+    return;
+  }
+  
+  execute_mode_selected(new_value);
 }
 
 // Start/stop swing the air outlet.
