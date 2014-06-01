@@ -109,7 +109,24 @@ volatile byte ir_data[NUM_IR_BYTES] =
  //  Always the same____________________ TEMP  0  1000XXX  MO  FAN  x60m_    RRX10000 00000001 MINUTS 0 00N01111 1000CRC_
  //  01010101 01011010 11110011 00001000 00000000 10001000 00000100 00000000 00010000 00000001 00000000 00001111 10001000
 
+// Debugging aid to dump all IR data bits.
+const byte dump_all_ir_data = 0;
 
+void dump_ir_data() {
+  for (int i = 0; i < NUM_IR_BYTES; i++) {
+    // For all bytes
+    int byte_value = ir_data[i];
+    for (int j = 0; j < 8; j++) {
+      // For all bits
+      int bit_value = (byte_value & (1 << 7)) == 0 ? 0 : 1;
+      byte_value <<= 1;
+
+      Serial1.print(bit_value);
+    }
+    Serial1.print(' ');
+  }
+  Serial1.println("");
+}
 
 // Invert the 'bits' number of bits in the 'value' byte.
 inline byte invert(byte value, byte bits) {
@@ -315,10 +332,15 @@ void ir_data_send() {
 }
 
 // Make the IR data package complete and send it out to the IR port.
-void ir_data_finalize_and_send(byte state) {
+void ir_data_finalize_and_send(byte state, byte debug = 0) {
   // Must always set state.
   set_ir_data(bs_state, state);
   ir_data_update_parity();
+
+  if (debug || dump_all_ir_data) {
+    dump_ir_data();
+  }
+
   ir_data_send();
 }
 
@@ -517,6 +539,11 @@ void execute_timer(char *buffer, int length) {
 
 // Turn on the selected mode.
 void execute_mode_selected(byte mode) {
+  byte old_value = get_ir_data(bs_mode);
+
+  Serial1.print("Old mode: "); Serial1.println(old_value);
+  Serial1.print("New mode: "); Serial1.println(mode);
+
   set_ir_data(bs_mode, mode);
 
   // The remote sets the temp when changing modes. Is this needed/wanted?.
@@ -590,8 +617,14 @@ void execute_mode(char* buffer, int length) {
 void execute_swing(char *buffer, int length) {
   TRIM(buffer, length);
 
+  byte old_value = get_ir_data(bs_rotate);
+  byte new_value = ROTATE_SWING;
+
+  Serial1.print("Old rotate(swing) value: "); Serial1.println(old_value);
+  Serial1.print("New rotate(swing) value: "); Serial1.println(new_value);
+
   // Ignore arguments.
-  set_ir_data(bs_rotate, ROTATE_SWING);
+  set_ir_data(bs_rotate, new_value);
   ir_data_finalize_and_send(STATE_CMD);
 }
 
