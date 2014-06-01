@@ -19,6 +19,39 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
+// Pin mapping
+#define TX_PIN     0
+#define RX_PIN     1
+#define DEBUG_PIN  7
+#define DEBUG2_PIN 8
+#define IR_PIN     9
+
+// Setup what serial ports to use.
+//
+// The Pro Micro uses:
+//  Serial1 to communicate over the TX_PIN and RX_PIN pins.
+//  Serial communicate to the Serial Monitor, through the USB connection.
+
+// #define USE_ONLY_HW_SERIAL
+#define USE_ONLY_SW_SERIAL
+
+#ifdef USE_ONLY_SW_SERIAL
+# define SerialUI Serial
+#else
+# define SerialUI Serial1
+#endif
+
+#ifdef USE_ONLY_HW_SERIAL
+# define SerialDebug Serial1
+#else
+# define SerialDebug Serial
+#endif
+
+// FIXME: Need to send both '\r' and '\n' for the current code to work.
+// Setup to expect '\r' as the end-of-line marker.
+#define is_eol(data) ((char)data == '\r')
+
+
 // Bytes per IR package
 const int NUM_IR_BYTES = 13;
 
@@ -121,11 +154,11 @@ void dump_ir_data() {
       int bit_value = (byte_value & (1 << 7)) == 0 ? 0 : 1;
       byte_value <<= 1;
 
-      Serial1.print(bit_value);
+      SerialUI.print(bit_value);
     }
-    Serial1.print(' ');
+    SerialUI.print(' ');
   }
-  Serial1.println("");
+  SerialUI.println("");
 }
 
 // Invert the 'bits' number of bits in the 'value' byte.
@@ -168,9 +201,6 @@ void ir_data_update_parity() {
   // xor:ing will get rid of previous parity.
   ir_data[NUM_IR_BYTES - 1] ^= parity;
 }
-
-#define DEBUG_PIN 7
-#define DEBUG2_PIN 8
 
 // Turn off the 38 kHz modulation.
 void turn_off_modulation() {
@@ -460,14 +490,14 @@ void execute_temp(char *buffer, int length) {
 
     value = negative ? -value : value;
 
-    Serial1.print("Requesting temp: "); Serial1.println(value);
+    SerialUI.print("Requesting temp: "); SerialUI.println(value);
 
     // Ignore special 10C value, for now.
     int min_temp = min_temp_for_mode();
     int max_temp = max_temp_for_mode();
 
-    Serial1.print("Min temp: "); Serial1.println(min_temp);
-    Serial1.print("Max temp: "); Serial1.println(max_temp);
+    SerialUI.print("Min temp: "); SerialUI.println(min_temp);
+    SerialUI.print("Max temp: "); SerialUI.println(max_temp);
 
     if (value > max_temp) {
       value = max_temp;
@@ -479,7 +509,7 @@ void execute_temp(char *buffer, int length) {
     new_temp = value;
   }
 
-  Serial1.print("Setting temp to: "); Serial1.println(new_temp);
+  SerialUI.print("Setting temp to: "); SerialUI.println(new_temp);
   set_temp_for_mode(new_temp);
   ir_data_finalize_and_send(STATE_CMD);
 }
@@ -512,14 +542,14 @@ void execute_clean(char *buffer, int length) {
 
   if (new_value == CLEAN_ON && state != STATE_OFF) {
      // Only start if turned off.
-    Serial1.println("Can't clean when device is on");
+    SerialUI.println("Can't clean when device is on");
     return;
   }
 
   if (new_value == CLEAN_ON) {
-    Serial1.println("Request start cleaning");
+    SerialUI.println("Request start cleaning");
   } else if (new_value == CLEAN_OFF) {
-    Serial1.println("Request stop cleaning");
+    SerialUI.println("Request stop cleaning");
   } else {
     // Don't know.
   }
@@ -530,15 +560,15 @@ void execute_clean(char *buffer, int length) {
 
 // FIXME: Implement the timer features.
 void execute_timer(char *buffer, int length) {
-  Serial1.println("Command not implemented: timer");
+  SerialUI.println("Command not implemented: timer");
 }
 
 // Turn on the selected mode.
 void execute_mode_selected(byte mode) {
   byte old_value = get_ir_data(bs_mode);
 
-  Serial1.print("Old mode: "); Serial1.println(old_value);
-  Serial1.print("New mode: "); Serial1.println(mode);
+  SerialUI.print("Old mode: "); SerialUI.println(old_value);
+  SerialUI.print("New mode: "); SerialUI.println(mode);
 
   set_ir_data(bs_mode, mode);
 
@@ -616,8 +646,8 @@ void execute_swing(char *buffer, int length) {
   byte old_value = get_ir_data(bs_rotate);
   byte new_value = ROTATE_SWING;
 
-  Serial1.print("Old rotate(swing) value: "); Serial1.println(old_value);
-  Serial1.print("New rotate(swing) value: "); Serial1.println(new_value);
+  SerialUI.print("Old rotate(swing) value: "); SerialUI.println(old_value);
+  SerialUI.print("New rotate(swing) value: "); SerialUI.println(new_value);
 
   // Ignore arguments.
   set_ir_data(bs_rotate, new_value);
@@ -647,8 +677,8 @@ void execute_rotate(char *buffer, int length) {
     new_value = ROTATE_OFF;
   }
 
-  Serial1.print("Old rotate value: "); Serial1.println(old_value);
-  Serial1.print("New rotate value: "); Serial1.println(new_value);
+  SerialUI.print("Old rotate value: "); SerialUI.println(old_value);
+  SerialUI.print("New rotate value: "); SerialUI.println(new_value);
 
   set_ir_data(bs_rotate, new_value);
   ir_data_finalize_and_send(STATE_CMD);
@@ -690,8 +720,8 @@ void execute_full_effect(char *buffer, int length) {
     return;
   }
 
-  Serial1.print("Old full mode: "); Serial1.println(old_value);
-  Serial1.print("New full mode: "); Serial1.println(new_value);
+  SerialUI.print("Old full mode: "); SerialUI.println(old_value);
+  SerialUI.print("New full mode: "); SerialUI.println(new_value);
 
   if (new_value == STATE_FULL_EFFECT_ON || new_value == STATE_FULL_EFFECT_OFF) {
     // The remote sets this time.
@@ -735,30 +765,30 @@ void execute_strength(char *buffer, int length) {
     return;
   }
 
-  Serial1.print("Old strength: "); Serial1.println(old_value);
-  Serial1.print("New strength: "); Serial1.println(new_value);
+  SerialUI.print("Old strength: "); SerialUI.println(old_value);
+  SerialUI.print("New strength: "); SerialUI.println(new_value);
 
   set_ir_data(bs_fan_strength, new_value);
   ir_data_finalize_and_send(STATE_CMD);
 }
 
 void execute_help(char *buffer, int length) {
-  Serial1.println("Commands:");
-  Serial1.println("  help  - Print this help text");
-  Serial1.println("  on    - Turn on the device");
-  Serial1.println("  off   - Turn off the device");
-  Serial1.println("  heat  - Turn on heat mode");
-  Serial1.println("  cool  - Turn on cool mode");
-  Serial1.println("  fan   - Turn on fan mode");
-  Serial1.println("  dry   - Turn on dry mode");
-  Serial1.println("  swing - Start or stop the swing");
-  Serial1.println("  ion      [on|off] - Toggle or turn on/off ion mode");
-  Serial1.println("  clean    [on|off] - Toggle or turn on/off clean mode.");
-  Serial1.println("  full     [on|off] - Toggle or turn on/off full-effect mode");
-  Serial1.println("  rotate   [on|off] - Turn on/off auto rotate mode?");
-  Serial1.println("  mode     [heat|cool|fan|dry]     - Cycle through or select mode");
-  Serial1.println("  strength [slow|medium|fast|auto] - Cycle through or select fan speed");
-  Serial1.println("  temp     <+|-|absolute value (18 to 32)|relative value (-2 to 2)]>");
+  SerialUI.println("Commands:");
+  SerialUI.println("  help  - Print this help text");
+  SerialUI.println("  on    - Turn on the device");
+  SerialUI.println("  off   - Turn off the device");
+  SerialUI.println("  heat  - Turn on heat mode");
+  SerialUI.println("  cool  - Turn on cool mode");
+  SerialUI.println("  fan   - Turn on fan mode");
+  SerialUI.println("  dry   - Turn on dry mode");
+  SerialUI.println("  swing - Start or stop the swing");
+  SerialUI.println("  ion      [on|off] - Toggle or turn on/off ion mode");
+  SerialUI.println("  clean    [on|off] - Toggle or turn on/off clean mode.");
+  SerialUI.println("  full     [on|off] - Toggle or turn on/off full-effect mode");
+  SerialUI.println("  rotate   [on|off] - Turn on/off auto rotate mode?");
+  SerialUI.println("  mode     [heat|cool|fan|dry]     - Cycle through or select mode");
+  SerialUI.println("  strength [slow|medium|fast|auto] - Cycle through or select fan speed");
+  SerialUI.println("  temp     <+|-|absolute value (18 to 32)|relative value (-2 to 2)]>");
 }
 
 void execute_command(char *buffer, int length) {
@@ -766,7 +796,7 @@ void execute_command(char *buffer, int length) {
     do {                                                                        \
       int command_str_len = strlen(command_str);                                \
       if (str_begins(buffer, command_str, command_str_len)) {                   \
-        Serial1.println("Executing: " command_str);                             \
+        SerialUI.println("Executing: " command_str);                            \
         execute_##command(buffer + command_str_len, length - command_str_len);  \
         return;                                                                 \
       }                                                                         \
@@ -790,22 +820,21 @@ void execute_command(char *buffer, int length) {
   execute_command_cond("strength", strength);
   execute_command_cond("help",     help);
 
-  Serial1.print("No such command: ");
-  Serial1.println(buffer);
+  SerialUI.print("No such command: ");
+  SerialUI.println(buffer);
 }
 
 void setup()  {
   // nothing happens in setup
-  pinMode(0, OUTPUT);
-  pinMode(1, INPUT);
-  pinMode(9, OUTPUT); // IR output pin.
-  pinMode(DEBUG_PIN, OUTPUT);
+  pinMode(TX_PIN,     OUTPUT);
+  pinMode(RX_PIN,     INPUT);
+  pinMode(IR_PIN,     OUTPUT);
+  pinMode(DEBUG_PIN,  OUTPUT);
   pinMode(DEBUG2_PIN, OUTPUT);
 
-  digitalWrite(DEBUG_PIN, LOW);
+  digitalWrite(DEBUG_PIN,  LOW);
   digitalWrite(DEBUG2_PIN, LOW);
-
-  digitalWrite(9, LOW);
+  digitalWrite(IR_PIN,     LOW);
 
   // Timer 1 is setup as a 38 kHz modulation timer
   // with toggling Output Compare.
@@ -834,17 +863,17 @@ void setup()  {
   TIMSK3 = _BV(OCIE3A); // Enable interrupt.
 
   // Arduino Serial Monitor - extra debugging.
-  Serial.begin(9600);
+  SerialDebug.begin(9600);
 
   // HW Serial Port - all commands are recieved from this port.
-  Serial1.begin(9600);
+  SerialUI.begin(9600);
 
   sei(); // Enable global interrupts
 }
 
 
 // Main loop.
-// Reads and acts on commands sent to the Serial1 port.
+// Reads and acts on commands sent to the SerialUI port.
 // The commands manipulate the current IR remote state and is then sent
 // out as IR pulses that are sent to the IVT Nordic Inverter heat pump.
 void loop()  {
@@ -854,43 +883,41 @@ void loop()  {
   static int length = 0;
   static int saved_length = 0;
 
-  #define is_eol(data) ((char)data == '\r')
-
-  if (Serial1.available() > 0) {
-    byte data = Serial1.read();
+  if (SerialUI.available() > 0) {
+    byte data = SerialUI.read();
 
     if (length >= 0) {
       if (is_eol(data)) {
-        Serial.print("<");
-        Serial.print((char)data);
-        Serial.print(">");
+        SerialDebug.print("<");
+        SerialDebug.print((char)data);
+        SerialDebug.print(">");
         // Found end-of-line. Execute the command.
         if (length > 0) {
-          Serial.println("Executing command");
+          SerialDebug.println("Executing command");
           buffer[length] = '\0';
           execute_command(buffer, length);
           saved_length = length;
           length = 0;
         } else {
-          Serial.print("Blank line");
+          SerialDebug.print("Blank line");
           execute_command(buffer, saved_length);
         }
       } else {
         if (length < BUFFER_SIZE) {
           buffer[length] = (char)data;
-          Serial.print(buffer[length]);
+          SerialDebug.print(buffer[length]);
           length++;
         } else {
-          Serial.print("Overflow");
+          SerialDebug.print("Overflow");
           // Overflow.
           length = -1;
         }
       }
     } else {
-      Serial.print("Overflow handling");
+      SerialDebug.print("Overflow handling");
       // Overflow handling. Drain incomming data until end-of-line is found.
       if (is_eol(data)) {
-        Serial.print("Overflow done");
+        SerialDebug.print("Overflow done");
         length = 0;
       }
     }
