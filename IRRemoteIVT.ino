@@ -42,7 +42,7 @@ const BitSegment bs_unknown2_0        = { 5, 0, 1, 0};
 
 const BitSegment bs_mode              = { 6, 6, 2, 0};
 const BitSegment bs_clean             = { 6, 4, 2, 0};
-const BitSegment bs_fan               = { 6, 1, 3, 0};
+const BitSegment bs_fan_strength      = { 6, 1, 3, 0};
 const BitSegment bs_unknown3_0        = { 6, 0, 1, 0};
 
 const BitSegment bs_time_hours        = { 7, 3, 5, 1};
@@ -85,6 +85,12 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 // Values for bs_clean
 #define CLEAN_ON   0b01
 #define CLEAN_OFF  0b10
+
+// Values for bs_fan_strength
+#define STRENGTH_SLOW   0b110
+#define STRENGTH_MEDIUM 0b101
+#define STRENGTH_FAST   0b111
+#define STRENGTH_AUTO   0b010
 
 // The IR data package.
 //
@@ -636,37 +642,38 @@ void execute_full_effect(char *buffer, int length) {
 void execute_strength(char *buffer, int length) {
   TRIM(buffer, length);
  
-  byte old_value = get_ir_data(bs_fan);
+  byte old_value = get_ir_data(bs_fan_strength);
   byte new_value;
  
-  if (length == 0) { 
-    // FIXME: Create constants
-    new_value = old_value == 0b010 ? 0b110 : // Slow
-                old_value == 0b110 ? 0b101 : // Medium
-                old_value == 0b101 ? 0b111 : // Fast
-                old_value == 0b111 ? 0b010 : // Auto
-                0b010;
-  } else if (length == 1) {
-    // FIXME: add names
-    if (buffer[0] == '1') {
-      new_value = 0b010;
-    } else if (buffer[0] == '2') {
-      new_value = 0b110;
-    } else if (buffer[0] == '3') {
-      new_value = 0b101;
-    } else if (buffer[0] == '4') {
-      new_value = 0b111;
-    } else {
-      // Don't know how to handle this.
-      new_value = old_value;
-    }
+  if (length == 0) {
+    // Cycle through the values.
+    new_value = old_value == STRENGTH_AUTO   ? STRENGTH_SLOW   :
+                old_value == STRENGTH_SLOW   ? STRENGTH_MEDIUM :
+                old_value == STRENGTH_MEDIUM ? STRENGTH_FAST   :
+                old_value == STRENGTH_FAST   ? STRENGTH_AUTO   :
+                /* Fallback */                 STRENGTH_AUTO;
+  
+  } else if (length == 4 && strncmp(buffer, "slow", length) == 0) {
+    new_value = STRENGTH_SLOW;
+    
+  } else if (length == 6 && strncmp(buffer, "medium", length) == 0) {
+    new_value = STRENGTH_MEDIUM;
+
+  } else if (length == 4 && strncmp(buffer, "fast", length) == 0) {
+    new_value = STRENGTH_FAST;
+
+  } else if (length == 4 && strncmp(buffer, "auto", length) == 0) {
+    new_value = STRENGTH_AUTO;
+  
   } else {
-    new_value = old_value;    
+    // Illegal arguments.
+    return;
   }
  
   Serial1.print("Old strength: "); Serial1.println(old_value);
   Serial1.print("New strength: "); Serial1.println(new_value);
-  set_ir_data(bs_fan, new_value);
+
+  set_ir_data(bs_fan_strength, new_value);
   ir_data_finalize_and_send(STATE_CMD);
 }
 
