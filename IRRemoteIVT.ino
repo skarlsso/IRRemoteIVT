@@ -68,7 +68,7 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define MODE_FAN  0b00
 #define MODE_HEAT 0b10
 #define MODE_COOL 0b01
-#define MODE_DROP 0b11
+#define MODE_DRY  0b11
 
 // Values for bs_state
 #define STATE_ON              0b100
@@ -515,7 +515,7 @@ void execute_mode_selected(char* buffer, int length, byte mode) {
     set_ir_data(bs_abs_temp, 26 - 17);
   } else if (mode == MODE_FAN) {
     set_ir_data(bs_abs_temp, 0);
-  } else if (mode == MODE_DROP) {
+  } else if (mode == MODE_DRY) {
     set_ir_data(bs_abs_temp, 0);
   } 
   set_ir_data(bs_rel_temp, 0);
@@ -539,10 +539,9 @@ void execute_fan(char *buffer, int length) {
   execute_mode_selected(buffer, length, MODE_FAN);
 }
 
-// Turn on Drop mode.
-// FIXME: Rename to Dry mode.
-void execute_drop(char *buffer, int length) {
-  execute_mode_selected(buffer, length, MODE_DROP);
+// Turn on Dry mode.
+void execute_dry(char *buffer, int length) {
+  execute_mode_selected(buffer, length, MODE_DRY);
 }
 
 // Cycle through the modes.
@@ -702,7 +701,7 @@ void execute_command(char *buffer, int length) {
   execute_command_cond("heat",     heat);
   execute_command_cond("cool",     cool);
   execute_command_cond("fan",      fan);
-  execute_command_cond("drop",     drop);
+  execute_command_cond("dry",      dry);
   execute_command_cond("mode",     mode);
   execute_command_cond("swing",    swing);
   execute_command_cond("rotate",   rotate);
