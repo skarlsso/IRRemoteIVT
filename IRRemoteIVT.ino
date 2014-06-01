@@ -765,6 +765,7 @@ void loop()  {
   // +1 to always be able to end the command with '\0'
   static char buffer[BUFFER_SIZE + 1];
   static int length = 0;
+  static int saved_length = 0;
   
   #define is_eol(data) ((char)data == '\r')
   
@@ -781,9 +782,11 @@ void loop()  {
           Serial.println("Executing command");
           buffer[length] = '\0';
           execute_command(buffer, length);
+          saved_length = length;
           length = 0;
         } else {
           Serial.print("Blank line");
+          execute_command(buffer, saved_length);
         }
       } else {
         if (length < BUFFER_SIZE) {
