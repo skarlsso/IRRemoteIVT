@@ -92,6 +92,9 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define STRENGTH_FAST   0b111
 #define STRENGTH_AUTO   0b010
 
+// Values for bs_ion
+#define ION_ON  0b1
+#define ION_OFF 0b0
 
 // String helpers
 #define str_equals(str, str_literal, len) (len == (sizeof(str_literal) - 1 /* '\0' */) && strncmp(str, str_literal, len) == 0)
@@ -347,22 +350,17 @@ void execute_ion(char *buffer, int length) {
   if (length == 0) {
     // Toggle the value.
     byte old_value = get_ir_data(bs_ion);
-    new_value = old_value == 0 ? 1 : 0;
+    new_value = (old_value == ION_ON) ? ION_OFF : ION_ON;
   
-  } else {
-    // Set value.
-    if (length != 1) {
-      // Illegal argument length.
-      return;
-    }
+  } else if (str_equals(buffer, "on", length)) {
+    new_value = ION_ON;
 
-    byte value = buffer[0] - (byte)'0';
-    if (value == 1 || value == 0) {
-      new_value = value;
-    } else {
-      // Illegal argument value
-      return; 
-    }
+  } else if (str_equals(buffer, "off", length)) {
+    new_value = ION_OFF;
+
+  } else {
+    // Illegal argument value
+    return;
   }
   
   set_ir_data(bs_ion, new_value);
