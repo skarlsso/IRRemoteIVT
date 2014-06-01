@@ -16,7 +16,7 @@
 //  "temp 25" - Set the temperature to 25 degrees.
 //  "full on" - Turn on full effect
 //   ... and more
-// 
+//
 // @author Stefan Karlsson (skarlsso@github)
 
 // Bytes per IR package
@@ -80,7 +80,7 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 // Values for bs_rotate
 #define ROTATE_ON    0b011
 #define ROTATE_OFF   0b101
-#define ROTATE_SWING 0b111 
+#define ROTATE_SWING 0b111
 
 // Values for bs_clean
 #define CLEAN_ON   0b01
@@ -106,7 +106,7 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 // This following values are a reasonable default.
 volatile byte ir_data[NUM_IR_BYTES] =
    { 0x55,    0x5A,    0xF3,    0x08,    0x00,    0x88,    0x04,    0x00,    0x10,    0x01,    0x00,    0x0F,    0x88 };
- //  Always the same____________________ TEMP  0  1000XXX  MO  FAN  x60m_    RRX10000 00000001 MINUTS 0 00N01111 1000CRC_   
+ //  Always the same____________________ TEMP  0  1000XXX  MO  FAN  x60m_    RRX10000 00000001 MINUTS 0 00N01111 1000CRC_
  //  01010101 01011010 11110011 00001000 00000000 10001000 00000100 00000000 00010000 00000001 00000000 00001111 10001000
 
 
@@ -119,7 +119,7 @@ inline byte invert(byte value, byte bits) {
     inverted |= value & 1;
     value >>= 1;
   }
-  
+
   return inverted;
 }
 
@@ -139,15 +139,15 @@ inline byte invert(byte value, byte bits) {
 void ir_data_update_parity() {
   byte parity = 0;
 
-  // Calculate 8 bytes parity, including the previous parity.  
+  // Calculate 8 bytes parity, including the previous parity.
   for (int i = 0; i < NUM_IR_BYTES; i++) {
     parity ^= ir_data[i];
   }
-  
-  // 8 bytes parity => 4 bytes parity 
+
+  // 8 bytes parity => 4 bytes parity
   parity ^= (parity >> 4);
   parity &= 0x0F;
-  
+
   // xor:ing will get rid of previous parity.
   ir_data[NUM_IR_BYTES - 1] ^= parity;
 }
@@ -217,17 +217,17 @@ ISR(TIMER3_COMPA_vect) {
     // The start of the send sequence is 8 ticks with the output held high ...
     ir_send_state++;
     enable_output = true;
-  
+
   } else if (ir_send_state < 12) {
     // ... followed by 4 ticks with the output held low ...
     ir_send_state++;
     enable_output = false;
 
   } else if (ir_send_state == 12) {
-    // ... follwed by 1 tick with the output held high. 
+    // ... follwed by 1 tick with the output held high.
     ir_send_state++;
     enable_output = true;
-    
+
     // Prepare first bit.
     ir_send_byte     = 0;
     ir_send_bit      = 8;
@@ -235,13 +235,13 @@ ISR(TIMER3_COMPA_vect) {
 
   } else if (ir_send_state == 13) {
     // After the start sequence the bits are sent.
-    
+
     // 1 is sent as 3 ticks with the output held low, followed by 1 tick with the output held high.
-    // 0 is sent as 1 tick  with the output held low, followed by 1 tick with the output held high.  
+    // 0 is sent as 1 tick  with the output held low, followed by 1 tick with the output held high.
     ir_send_bit_tick--;
     if (ir_send_bit_tick == 0) {
       // All ticks done for this bit; fetch new bit.
-      
+
       if (ir_send_bit > 0) {
         // More bits to send in the current byte.
         ir_send_bit--;
@@ -255,41 +255,41 @@ ISR(TIMER3_COMPA_vect) {
         byte ir_byte = ir_data[ir_send_byte];
         byte ir_bit  = ir_byte & (1 << ir_send_bit);
         // 0 bit => 1 tick  low + 1 tick high
-        // 1 bit => 3 ticks low + 1 tick high  
+        // 1 bit => 3 ticks low + 1 tick high
         ir_send_bit_tick = ((ir_bit == 0) ? 1 : 3) + 1;
-  
+
         // First tick: low
         enable_output = false;
-     
-      } else {      
-        // This was the last byte. Got to end state.     
+
+      } else {
+        // This was the last byte. Got to end state.
         ir_send_state++;
 
         // Last bit. Pull the line low.
         enable_output = false;
-      } 
+      }
 
     } else if (ir_send_bit_tick == 1) {
       // Last tick: high
       enable_output = true;
-  
+
     } else { // ir_send_bit_tick == 2 or 3
       // Ticks 3 and 2 for 1 bit case: low
-      enable_output = false;  
+      enable_output = false;
     }
-      
-  } else if (ir_send_state < 250) {    
+
+  } else if (ir_send_state < 250) {
     // Wait aribitrarily long before restarting;
     ir_send_state++;
     enable_output = false;
-  
+
   } else {
     // All bits have been sent. Time to turn off the ticks clock (Timer 3).
     TCCR3B &= ~(_BV(CS30)); // Turn off clock
     ir_send_state = 0;
     enable_output = false;
   }
-  
+
   // Output the state.
   if (previous_output != enable_output) {
     digitalWrite(DEBUG_PIN, enable_output);
@@ -310,7 +310,7 @@ void ir_data_send() {
   TCNT3   = OCR3A - 1;
   // Turn on clock
   TCCR3B |= _BV(CS30);
-  
+
   // The timer will be turned off when the entire IR data package has been sent out.
 }
 
@@ -344,14 +344,14 @@ void execute_off(char *buffer, int length) {
 // Turn on/off the "Plasma Cluster"/ion mode.
 void execute_ion(char *buffer, int length) {
   TRIM(buffer, length);
-  
+
   byte new_value;
 
   if (length == 0) {
     // Toggle the value.
     byte old_value = get_ir_data(bs_ion);
     new_value = (old_value == ION_ON) ? ION_OFF : ION_ON;
-  
+
   } else if (str_equals(buffer, "on", length)) {
     new_value = ION_ON;
 
@@ -362,7 +362,7 @@ void execute_ion(char *buffer, int length) {
     // Illegal argument value
     return;
   }
-  
+
   set_ir_data(bs_ion, new_value);
   ir_data_finalize_and_send(STATE_CMD);
 }
@@ -387,19 +387,19 @@ int get_temp_for_mode() {
     // The temp bits are relative +17C.
     return 17 + get_ir_data(bs_abs_temp);
   } else {
-   return (get_ir_data(bs_rel_temp_sign) == 0 ? 1 : -1) * get_ir_data(bs_rel_temp); 
+   return (get_ir_data(bs_rel_temp_sign) == 0 ? 1 : -1) * get_ir_data(bs_rel_temp);
   }
 }
 
 void set_temp_for_mode(int temp) {
   if (mode_uses_absolute_time()) {
-    set_ir_data(bs_abs_temp, temp - 17); 
+    set_ir_data(bs_abs_temp, temp - 17);
   } else {
     set_ir_data(bs_rel_temp, (temp < 0 ? -temp : temp));
-    set_ir_data(bs_rel_temp_sign, (temp < 0 ? 1 : 0)); 
+    set_ir_data(bs_rel_temp_sign, (temp < 0 ? 1 : 0));
   }
 }
-  
+
 
 int a_to_positive_number(char* buffer, int length) {
   int value = 0;
@@ -417,12 +417,12 @@ int a_to_positive_number(char* buffer, int length) {
 // Request a given temperature.
 void execute_temp(char *buffer, int length) {
   TRIM(buffer, length);
-    
+
   if (length <= 0) {
      // Nothing to do.
      return;
   }
-  
+
   int old_temp = get_temp_for_mode();
   int new_temp = 0;
 
@@ -430,7 +430,7 @@ void execute_temp(char *buffer, int length) {
     new_temp = old_temp + ((old_temp < max_temp_for_mode()) ? 1 : 0);
 
   } else if (length == 1 && buffer[0] == '-') {
-    new_temp = old_temp - ((old_temp > min_temp_for_mode()) ? 1 : 0); 
+    new_temp = old_temp - ((old_temp > min_temp_for_mode()) ? 1 : 0);
 
   } else {
     byte negative = buffer[0] == '-';
@@ -439,11 +439,11 @@ void execute_temp(char *buffer, int length) {
     if (value == -1) {
       return; // Error
     }
-    
+
     value = negative ? -value : value;
 
     Serial1.print("Requesting temp: "); Serial1.println(value);
- 
+
     // Ignore special 10C value, for now.
     int min_temp = min_temp_for_mode();
     int max_temp = max_temp_for_mode();
@@ -457,10 +457,10 @@ void execute_temp(char *buffer, int length) {
     if (value < min_temp) {
       value = min_temp;
     }
-    
+
     new_temp = value;
   }
-  
+
   Serial1.print("Setting temp to: "); Serial1.println(new_temp);
   set_temp_for_mode(new_temp);
   ir_data_finalize_and_send(STATE_CMD);
@@ -469,11 +469,11 @@ void execute_temp(char *buffer, int length) {
 // Turn on/off the Cleaning program.
 void execute_clean(char *buffer, int length) {
   TRIM(buffer, length);
-  
+
   byte state     = get_ir_data(bs_state);
   byte old_value = get_ir_data(bs_clean);
   byte new_value = old_value;
-  
+
   if (length == 0) {
     // Toggle.
     if (old_value == CLEAN_ON) {
@@ -490,14 +490,14 @@ void execute_clean(char *buffer, int length) {
   } else {
     // Illegal argument
     return;
-  }  
-      
+  }
+
   if (new_value == CLEAN_ON && state != STATE_OFF) {
      // Only start if turned off.
     Serial1.println("Can't clean when device is on");
-    return; 
+    return;
   }
-  
+
   if (new_value == CLEAN_ON) {
     Serial1.println("Request start cleaning");
   } else if (new_value == CLEAN_OFF) {
@@ -505,7 +505,7 @@ void execute_clean(char *buffer, int length) {
   } else {
     // Don't know.
   }
-  
+
   set_ir_data(bs_clean, new_value);
   ir_data_finalize_and_send(STATE_CMD);
 }
@@ -520,7 +520,7 @@ void execute_mode_selected(byte mode) {
   set_ir_data(bs_mode, mode);
 
   // The remote sets the temp when changing modes. Is this needed/wanted?.
-  if (mode == MODE_HEAT) {  
+  if (mode == MODE_HEAT) {
     set_ir_data(bs_abs_temp, 23 - 17);
   } else if (mode == MODE_COOL) {
     set_ir_data(bs_abs_temp, 26 - 17);
@@ -528,7 +528,7 @@ void execute_mode_selected(byte mode) {
     set_ir_data(bs_abs_temp, 0);
   } else if (mode == MODE_DRY) {
     set_ir_data(bs_abs_temp, 0);
-  } 
+  }
   set_ir_data(bs_rel_temp, 0);
   set_ir_data(bs_rel_temp_sign, 0);
 
@@ -558,20 +558,20 @@ void execute_dry(char *buffer, int length) {
 // Cycle through the modes.
 void execute_mode(char* buffer, int length) {
   TRIM(buffer, length);
-  
+
   byte old_value = get_ir_data(bs_mode);
   byte new_value;
-  
+
   if (length == 0) {
     // Cycle through the modes.
     new_value = (old_value + 1) & 0b11;
-  
+
   } else if (str_equals(buffer, "fan", length)) {
     new_value = MODE_FAN;
-    
+
   } else if (str_equals(buffer, "heat", length)) {
     new_value = MODE_HEAT;
-    
+
   } else if (str_equals(buffer, "cool", length)) {
     new_value = MODE_COOL;
 
@@ -582,14 +582,14 @@ void execute_mode(char* buffer, int length) {
     // Illegal argument.
     return;
   }
-  
+
   execute_mode_selected(new_value);
 }
 
 // Start/stop swing the air outlet.
 void execute_swing(char *buffer, int length) {
   TRIM(buffer, length);
-  
+
   // Ignore arguments.
   set_ir_data(bs_rotate, ROTATE_SWING);
   ir_data_finalize_and_send(STATE_CMD);
@@ -599,10 +599,10 @@ void execute_swing(char *buffer, int length) {
 // FIXME: Figure out what this is.
 void execute_rotate(char *buffer, int length) {
   TRIM(buffer, length);
-  
+
   byte old_value = get_ir_data(bs_rotate);
   byte new_value = old_value;
-  
+
   if (length == 0) {
     // Toggle.
     if (old_value == ROTATE_ON) {
@@ -617,7 +617,7 @@ void execute_rotate(char *buffer, int length) {
   } else if (str_equals(buffer, "off", length)) {
     new_value = ROTATE_OFF;
   }
-    
+
   Serial1.print("Old rotate value: "); Serial1.println(old_value);
   Serial1.print("New rotate value: "); Serial1.println(new_value);
 
@@ -628,12 +628,12 @@ void execute_rotate(char *buffer, int length) {
 // Turn on/off the Full Effect feature.
 void execute_full_effect(char *buffer, int length) {
   TRIM(buffer, length);
-  
+
   byte old_value = get_ir_data(bs_state);
   byte new_value = old_value;
-  
+
   if (length == 0) {
-    // Toggle. 
+    // Toggle.
     if (old_value == STATE_FULL_EFFECT_OFF) {
       new_value = STATE_FULL_EFFECT_ON;
 
@@ -646,19 +646,19 @@ void execute_full_effect(char *buffer, int length) {
     } else {
       // Do nothing when the IVT is off.
     }
-  
+
   } else if (str_equals(buffer, "on", length)) {
     if (old_value != STATE_OFF) {
       new_value = STATE_FULL_EFFECT_ON;
     }
-  
+
   } else if (str_equals(buffer, "off", length)) {
     if (old_value == STATE_FULL_EFFECT_ON) {
       new_value = STATE_FULL_EFFECT_OFF;
     }
   } else {
     // Illegal argument.
-    return;    
+    return;
   }
 
   Serial1.print("Old full mode: "); Serial1.println(old_value);
@@ -670,17 +670,17 @@ void execute_full_effect(char *buffer, int length) {
     set_ir_data(bs_time_hours, 0);
     set_ir_data(bs_time_minutes, 1);
   }
-    
+
   ir_data_finalize_and_send(new_value);
 }
 
 // Set fan strength.
 void execute_strength(char *buffer, int length) {
   TRIM(buffer, length);
- 
+
   byte old_value = get_ir_data(bs_fan_strength);
   byte new_value;
- 
+
   if (length == 0) {
     // Cycle through the values.
     new_value = old_value == STRENGTH_AUTO   ? STRENGTH_SLOW   :
@@ -688,10 +688,10 @@ void execute_strength(char *buffer, int length) {
                 old_value == STRENGTH_MEDIUM ? STRENGTH_FAST   :
                 old_value == STRENGTH_FAST   ? STRENGTH_AUTO   :
                 /* Fallback */                 STRENGTH_AUTO;
-  
+
   } else if (str_equals(buffer, "slow", length)) {
     new_value = STRENGTH_SLOW;
-    
+
   } else if (str_equals(buffer, "medium", length)) {
     new_value = STRENGTH_MEDIUM;
 
@@ -700,12 +700,12 @@ void execute_strength(char *buffer, int length) {
 
   } else if (str_equals(buffer, "auto", length)) {
     new_value = STRENGTH_AUTO;
-  
+
   } else {
     // Illegal arguments.
     return;
   }
- 
+
   Serial1.print("Old strength: "); Serial1.println(old_value);
   Serial1.print("New strength: "); Serial1.println(new_value);
 
@@ -740,24 +740,24 @@ void execute_command(char *buffer, int length) {
   execute_command_cond("rotate",   rotate);
   execute_command_cond("full",     full_effect);
   execute_command_cond("strength", strength);
-  
+
   Serial1.print("No such command: ");
   Serial1.println(buffer);
 }
 
-void setup()  { 
+void setup()  {
   // nothing happens in setup
   pinMode(0, OUTPUT);
-  pinMode(1, INPUT); 
+  pinMode(1, INPUT);
   pinMode(9, OUTPUT); // IR output pin.
   pinMode(DEBUG_PIN, OUTPUT);
   pinMode(DEBUG2_PIN, OUTPUT);
-  
+
   digitalWrite(DEBUG_PIN, LOW);
   digitalWrite(DEBUG2_PIN, LOW);
-  
+
   digitalWrite(9, HIGH);
-  
+
   // Timer 1 is setup as a 38 kHz modulation timer
   // with toggling Output Compare.
   TCCR1A = 0;
@@ -765,19 +765,19 @@ void setup()  {
   TCNT1 = 0;
   TCCR1A =
     // _BV(COM1A0) // Don't enable the OC yet.
-    _BV(COM1B1); 
+    _BV(COM1B1);
 
   TCCR1B = _BV(WGM12)  //    -"-
     | _BV(CS10);       // Pre-scaler
   OCR1A = 210; // 38kHz with 16MHz & no prescaler
-  
+
   // Invert the signal: temporary turn on the OC, Force OC, turn off the OC.
   TCCR1A |= _BV(COM1A0);
   TCCR1C |= _BV(FOC1A);
   TCCR1A &= ~(_BV(COM1A0));
-    
+
   digitalWrite(DEBUG2_PIN, HIGH);
-  
+
   // Timer 3 is time the ticks in the IR signal train of one IR data package.
   TCCR3A = 0;
   TCCR3B = 0;
@@ -791,30 +791,30 @@ void setup()  {
 
   // Arduino Serial Monitor - extra debugging.
   Serial.begin(9600);
-  
+
   // HW Serial Port - all commands are recieved from this port.
   Serial1.begin(9600);
 
   sei(); // Enable global interrupts
-} 
+}
 
 
 // Main loop.
 // Reads and acts on commands sent to the Serial1 port.
 // The commands manipulate the current IR remote state and is then sent
-// out as IR pulses that are sent to the IVT Nordic Inverter heat pump. 
+// out as IR pulses that are sent to the IVT Nordic Inverter heat pump.
 void loop()  {
   const int BUFFER_SIZE = 64;
   // +1 to always be able to end the command with '\0'
   static char buffer[BUFFER_SIZE + 1];
   static int length = 0;
   static int saved_length = 0;
-  
+
   #define is_eol(data) ((char)data == '\r')
-  
+
   if (Serial1.available() > 0) {
     byte data = Serial1.read();
-    
+
     if (length >= 0) {
       if (is_eol(data)) {
         Serial.print("<");
@@ -839,7 +839,7 @@ void loop()  {
         } else {
           Serial.print("Overflow");
           // Overflow.
-          length = -1; 
+          length = -1;
         }
       }
     } else {
@@ -847,7 +847,7 @@ void loop()  {
       // Overflow handling. Drain incomming data until end-of-line is found.
       if (is_eol(data)) {
         Serial.print("Overflow done");
-        length = 0;  
+        length = 0;
       }
     }
   }
