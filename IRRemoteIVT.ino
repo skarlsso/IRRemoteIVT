@@ -180,17 +180,36 @@ ISR(TIMER1_COMPA_vect) {
   }
 }
 
-// FIXME: Remove volatile if only used in the ISR.
-volatile byte ir_send_state = 0;
-volatile byte enable_output = false;
-volatile byte previous_output = false;
-volatile byte ir_send_byte  = 0;
-volatile byte ir_send_bit   = 0;
-volatile byte ir_send_bit_tick = 0;
-
 // Interrupt routine for the Timer 3 Output Compare.
 // Handles the timing needed to send the IR data package.
 ISR(TIMER3_COMPA_vect) {
+  // ISR local variables
+  static byte ir_send_state    = 0;
+  static byte ir_send_byte     = 0;
+  static byte ir_send_bit      = 0;
+  static byte ir_send_bit_tick = 0;
+  static byte previous_output  = false;
+
+  // IR data package state machine.
+  //
+  // The timing is divided into 'ticks' of a fixed duration.
+  //  H: A tick with the output enabled (held high)
+  //  L: A tick with the output disabled (held low)
+  //
+  // The ticks for the IR data package are:
+  //  HHHHHHHHLLLLH<data specific ticks>
+  //
+  // The 'data specific ticks' encode the 0's and 1's.
+  //  0: LH (one L tick followed by a H tick)
+  //  1: LLLH (three L ticks folled by a H tick)
+  //
+  // Example:
+  //  IR data package: 01010110
+  //                   Preamble     0 1   0 1   0 1   1
+  //  Ticks & output:  HHHHHHHHLLLLHLHLLLHLHLLLHLHLLLHLLLH
+
+  byte enable_output;
+
   if (ir_send_state < 8) {
     // The start of the send sequence is 8 ticks with the output held high ...
     ir_send_state++;
@@ -209,7 +228,7 @@ ISR(TIMER3_COMPA_vect) {
     // Prepare first bit.
     ir_send_byte     = 0;
     ir_send_bit      = 8;
-    ir_send_bit_tick = 1; // pre-decremented
+    ir_send_bit_tick = 1; // Set to 1, since pre-decremented below.
 
   } else if (ir_send_state == 13) {
     // After the start sequence the bits are sent.
@@ -262,9 +281,10 @@ ISR(TIMER3_COMPA_vect) {
     enable_output = false;
   
   } else {
-    // Turn off compare capture.
+    // All bits have been sent. Time to turn off the ticks clock (Timer 3).
     TCCR3B &= ~(_BV(CS30)); // Turn off clock
     ir_send_state = 0;
+    enable_output = false;
   }
   
   // Output the state.
