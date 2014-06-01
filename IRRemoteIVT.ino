@@ -169,10 +169,6 @@ void ir_data_update_parity() {
   ir_data[NUM_IR_BYTES - 1] ^= parity;
 }
 
-// Invert the signal levels, since this used together with a transistor in an inverted configuration.
-#define IR_ON   LOW
-#define IR_OFF  HIGH
-
 #define DEBUG_PIN 7
 #define DEBUG2_PIN 8
 
@@ -193,7 +189,7 @@ void turn_on_modulation() {
 // The Timer 1 Output Capture is turned on at the end of a 'HIGH' tick in the IR pulse train,
 // and only used to safely shut down the Timer 1 generated 38 kHz modulation.
 ISR(TIMER1_COMPA_vect) {
-  if (digitalRead(9) == IR_OFF) {
+  if (digitalRead(9) == LOW) {
     // Can only turn off while the IR modulation is off;
     TCCR1A &= ~(_BV(COM1A0));
     TIMSK1 &= ~(_BV(OCIE1A)); // Disable interrupt
@@ -789,7 +785,7 @@ void setup()  {
   digitalWrite(DEBUG_PIN, LOW);
   digitalWrite(DEBUG2_PIN, LOW);
 
-  digitalWrite(9, HIGH);
+  digitalWrite(9, LOW);
 
   // Timer 1 is setup as a 38 kHz modulation timer
   // with toggling Output Compare.
@@ -803,11 +799,6 @@ void setup()  {
   TCCR1B = _BV(WGM12)  //    -"-
     | _BV(CS10);       // Pre-scaler
   OCR1A = 210; // 38kHz with 16MHz & no prescaler
-
-  // Invert the signal: temporary turn on the OC, Force OC, turn off the OC.
-  TCCR1A |= _BV(COM1A0);
-  TCCR1C |= _BV(FOC1A);
-  TCCR1A &= ~(_BV(COM1A0));
 
   digitalWrite(DEBUG2_PIN, HIGH);
 
