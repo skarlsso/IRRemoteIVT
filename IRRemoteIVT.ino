@@ -202,11 +202,48 @@ void ir_data_update_parity() {
   ir_data[NUM_IR_BYTES - 1] ^= parity;
 }
 
+// Timer functions
+// ===============
+
+void setup_modulation_timer() {
+ // Timer 1 is setup as a 38 kHz modulation timer
+  // with toggling Output Compare.
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  TCCR1A =
+    // _BV(COM1A0) // Don't enable the OC yet.
+    _BV(COM1B1);
+
+  TCCR1B = _BV(WGM12)  //    -"-
+    | _BV(CS10);       // Pre-scaler
+  OCR1A = 210; // 38kHz with 16MHz & no prescaler  
+}
+
+void setup_IR_tick_timer() {
+  // Timer 3 is time the ticks in the IR signal train of one IR data package.
+  TCCR3A = 0;
+  TCCR3B = 0;
+  TCNT3 = 0;            // Initial Count value
+  TCCR3B = 0
+    | _BV(WGM32)        // Count mode: CTC - Counter To Clear?
+    ;//| _BV(CS30);        // Clock Select: clk1/0 no prescaler
+  OCR3A = 3750 * 2;          // Set timer duration
+  //OCF3A = 0;            // Clear interrupt flag.
+  TIMSK3 = _BV(OCIE3A); // Enable interrupt.  
+}
+
+
 // Turn off the 38 kHz modulation.
 void turn_off_modulation() {
   // Enable Timer1 interrupt and let the ISR turn
   // off the modulation at an appropriate point.
   TIMSK1 |= _BV(OCIE1A); // Enable interrupt.
+}
+
+void turn_off_modulation_from_isr() {
+  TCCR1A &= ~(_BV(COM1A0));
+  TIMSK1 &= ~(_BV(OCIE1A)); // Disable interrupt
 }
 
 // Turn on the 38 kHz modulation.
@@ -216,13 +253,25 @@ void turn_on_modulation() {
   TCCR1C |= _BV(FOC1A); // Force output compare
 }
 
+void turn_on_IR_ticks_timer() {
+  // Start Timer 3 to clock out all IR data.
+  // Set the time to one before OC to immediately trigger a Output Compare event.
+  TCNT3   = OCR3A - 1;
+  // Turn on clock
+  TCCR3B |= _BV(CS30);
+}
+
+
+void turn_off_IR_ticks_timer() {
+  TCCR3B &= ~(_BV(CS30)); // Turn off clock
+}
+
 // The Timer 1 Output Capture is turned on at the end of a 'HIGH' tick in the IR pulse train,
 // and only used to safely shut down the Timer 1 generated 38 kHz modulation.
 ISR(TIMER1_COMPA_vect) {
   if (digitalRead(9) == LOW) {
     // Can only turn off while the IR modulation is off;
-    TCCR1A &= ~(_BV(COM1A0));
-    TIMSK1 &= ~(_BV(OCIE1A)); // Disable interrupt
+    turn_off_modulation_from_isr(); 
   }
 }
 
@@ -327,8 +376,8 @@ ISR(TIMER3_COMPA_vect) {
     enable_output = false;
 
   } else {
-    // All bits have been sent. Time to turn off the ticks clock (Timer 3).
-    TCCR3B &= ~(_BV(CS30)); // Turn off clock
+    // All bits have been sent. Time to turn off the ticks timer.
+    turn_off_IR_ticks_timer();
     ir_send_state = 0;
     enable_output = false;
   }
@@ -348,12 +397,7 @@ ISR(TIMER3_COMPA_vect) {
 
 // Send the IR data package.
 void ir_data_send() {
-  // Start Timer 3 to clock out all IR data.
-  // Set the time to one before OC to immediately trigger a Output Compare event.
-  TCNT3   = OCR3A - 1;
-  // Turn on clock
-  TCCR3B |= _BV(CS30);
-
+  turn_on_IR_ticks_timer();
   // The timer will be turned off when the entire IR data package has been sent out.
 }
 
@@ -369,6 +413,10 @@ void ir_data_finalize_and_send(byte state, byte debug = 0) {
 
   ir_data_send();
 }
+
+
+// Commands
+// ========
 
 void execute_on(char *buffer, int length) {
   // Ignore parameters.
@@ -824,8 +872,8 @@ void execute_command(char *buffer, int length) {
   SerialUI.println(buffer);
 }
 
+
 void setup()  {
-  // nothing happens in setup
   pinMode(TX_PIN,     OUTPUT);
   pinMode(RX_PIN,     INPUT);
   pinMode(IR_PIN,     OUTPUT);
@@ -836,32 +884,9 @@ void setup()  {
   digitalWrite(DEBUG2_PIN, LOW);
   digitalWrite(IR_PIN,     LOW);
 
-  // Timer 1 is setup as a 38 kHz modulation timer
-  // with toggling Output Compare.
-  TCCR1A = 0;
-  TCCR1B = 0;
-  TCNT1 = 0;
-  TCCR1A =
-    // _BV(COM1A0) // Don't enable the OC yet.
-    _BV(COM1B1);
-
-  TCCR1B = _BV(WGM12)  //    -"-
-    | _BV(CS10);       // Pre-scaler
-  OCR1A = 210; // 38kHz with 16MHz & no prescaler
-
-  digitalWrite(DEBUG2_PIN, HIGH);
-
-  // Timer 3 is time the ticks in the IR signal train of one IR data package.
-  TCCR3A = 0;
-  TCCR3B = 0;
-  TCNT3 = 0;            // Initial Count value
-  TCCR3B = 0
-    | _BV(WGM32)        // Count mode: CTC - Counter To Clear?
-    ;//| _BV(CS30);        // Clock Select: clk1/0 no prescaler
-  OCR3A = 3750 * 2;          // Set timer duration
-  //OCF3A = 0;            // Clear interrupt flag.
-  TIMSK3 = _BV(OCIE3A); // Enable interrupt.
-
+  setup_modulation_timer();
+  setup_IR_tick_timer();
+ 
   // Arduino Serial Monitor - extra debugging.
   SerialDebug.begin(9600);
 
