@@ -455,11 +455,11 @@ void execute_off(char *buffer, int length) {
 void execute_ion(char *buffer, int length) {
   TRIM(buffer, length);
 
+  byte old_value = get_ir_data(bs_ion);
   byte new_value;
 
   if (length == 0) {
     // Toggle the value.
-    byte old_value = get_ir_data(bs_ion);
     new_value = (old_value == ION_ON) ? ION_OFF : ION_ON;
 
   } else if (str_equals(buffer, "on", length)) {
@@ -472,6 +472,9 @@ void execute_ion(char *buffer, int length) {
     // Illegal argument value
     return;
   }
+
+  SerialUI.print("Old ion value: "); SerialUI.println(old_value);
+  SerialUI.print("New ion value: "); SerialUI.println(new_value);
 
   set_ir_data(bs_ion, new_value);
   ir_data_finalize_and_send(STATE_CMD);
@@ -572,6 +575,7 @@ void execute_temp(char *buffer, int length) {
   }
 
   SerialUI.print("Setting temp to: "); SerialUI.println(new_temp);
+
   set_temp_for_mode(new_temp);
   ir_data_finalize_and_send(STATE_CMD);
 }
@@ -853,14 +857,14 @@ void execute_help(char *buffer, int length) {
   SerialUI.println("  temp     <+|-|absolute value (18 to 32)|relative value (-2 to 2)]>");
 }
 
-void execute_command(char *buffer, int length) {
+boolean execute_command(char *buffer, int length) {
   #define execute_command_cond(command_str, command)                            \
     do {                                                                        \
       int command_str_len = strlen(command_str);                                \
       if (str_begins(buffer, command_str, command_str_len)) {                   \
-        SerialUI.println("Executing: " command_str);                            \
+        SerialUI.print("Executing command: "); SerialUI.println(buffer);        \
         execute_##command(buffer + command_str_len, length - command_str_len);  \
-        return;                                                                 \
+        return true;                                                            \
       }                                                                         \
     } while (0)
 
@@ -884,6 +888,8 @@ void execute_command(char *buffer, int length) {
 
   SerialUI.print("No such command: ");
   SerialUI.println(buffer);
+
+  return false;
 }
 
 
@@ -927,36 +933,36 @@ void loop()  {
 
     if (length >= 0) {
       if (is_eol(data)) {
-        SerialDebug.print("<");
-        SerialDebug.print((char)data);
-        SerialDebug.print(">");
         // Found end-of-line. Execute the command.
         if (length > 0) {
-          SerialDebug.println("Executing command");
           buffer[length] = '\0';
+
           execute_command(buffer, length);
+
           saved_length = length;
           length = 0;
         } else {
-          SerialDebug.print("Blank line");
           execute_command(buffer, saved_length);
         }
       } else {
         if (length < BUFFER_SIZE) {
           buffer[length] = (char)data;
-          SerialDebug.print(buffer[length]);
           length++;
         } else {
-          SerialDebug.print("Overflow");
           // Overflow.
+          buffer[BUFFER_SIZE] = '\0';
+
+          SerialUI.print("Too long command: ");
+          SerialUI.println(buffer);
+
           length = -1;
         }
       }
     } else {
-      SerialDebug.print("Overflow handling");
+      SerialDebug.println("Overflow handling");
       // Overflow handling. Drain incomming data until end-of-line is found.
       if (is_eol(data)) {
-        SerialDebug.print("Overflow done");
+        SerialDebug.println("Overflow done");
         length = 0;
       }
     }
