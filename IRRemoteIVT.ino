@@ -24,6 +24,8 @@
 #define RX_PIN     1
 #define DEBUG_PIN  7
 #define DEBUG2_PIN 8
+
+// The IR pin must match the Output Compare pin for OC1A.
 #define IR_PIN     9
 
 // Setup what serial ports to use.
@@ -205,32 +207,76 @@ void ir_data_update_parity() {
 // Timer functions
 // ===============
 
+// FIXME: Use 8-bit Timer 0 for ATmega32U4 so that
+//        the same code can be used for both MCUs.
+#if defined(__AVR_ATmega32U4__)
+# define TCCRxA      TCCR3A
+# define TCCRxB      TCCR3B
+# define TCNTx       TCNT3
+# define WGMx1       WGM31
+# define WGMx2       WGM32
+# define CSx0        CS30
+# define OCRxA       OCR3A
+# define TIMSKx      TIMSK3
+# define OCIExA      OCIE3A
+#define TIMERx_COMPA_vect TIMER3_COMPA_vect
+#elif defined(__AVR_ATmega328P__)
+# define TCCRxA      TCCR0A
+# define TCCRxB      TCCR0B
+# define TCNTx       TCNT0
+# define WGMx1       WGM01
+# define WGMx2       WGM02
+# define CSx0        CS00
+# define CSx1        CS01
+# define CSx2        CS02
+# define OCRxA       OCR0A
+# define TIMSKx      TIMSK0
+# define OCIExA      OCIE0A
+#define TIMERx_COMPA_vect TIMER0_COMPA_vect
+#endif
+
 void setup_modulation_timer() {
  // Timer 1 is setup as a 38 kHz modulation timer
   // with toggling Output Compare.
   TCCR1A = 0;
   TCCR1B = 0;
   TCNT1 = 0;
-  TCCR1A =
-    // _BV(COM1A0) // Don't enable the OC yet.
-    _BV(COM1B1);
+  TCCR1A = 0; /* _BV(COM1A0) */ // Don't enable the OC yet.
 
   TCCR1B = _BV(WGM12)  //    -"-
     | _BV(CS10);       // Pre-scaler
-  OCR1A = 210; // 38kHz with 16MHz & no prescaler  
+  OCR1A = 105; // 38kHz with 8MHz & no prescaler
 }
 
 void setup_IR_tick_timer() {
   // Timer 3 is time the ticks in the IR signal train of one IR data package.
-  TCCR3A = 0;
-  TCCR3B = 0;
-  TCNT3 = 0;            // Initial Count value
-  TCCR3B = 0
-    | _BV(WGM32)        // Count mode: CTC - Counter To Clear?
-    ;//| _BV(CS30);        // Clock Select: clk1/0 no prescaler
-  OCR3A = 3750 * 2;          // Set timer duration
-  //OCF3A = 0;            // Clear interrupt flag.
-  TIMSK3 = _BV(OCIE3A); // Enable interrupt.  
+  TCCRxA = 0;
+  TCCRxB = 0;
+  TCNTx = 0;            // Initial Count value
+
+ // Clear Timer on Compare Match (CTC) Mode
+#if defined(__AVR_ATmega32U4__)
+  TCCRxB = _BV(WGMx2);
+#elif defined(__AVR_ATmega328P__)
+  TCCRxA = _BV(WGMx1);
+#endif
+
+ // Don't enable the clock source yet.
+#if defined(__AVR_ATmega32U4__)
+# define CLOCK_SELECT _BV(CSx0)                // clk1/0 (no prescaler)
+#elif defined(__AVR_ATmega328P__)
+# define CLOCK_SELECT (_BV(CSx1) | _BV(CSx0))  // clk1/8
+#endif
+
+#if defined(__AVR_ATmega32U4__)
+  // 16MHz /wo prescaler
+  OCRxA = 3750 * 2;              // Set timer duration
+#elif defined(__AVR_ATmega328P__)
+  // 8MHz /w 8 prescaler
+  OCRxA = 58;                    // Set timer duration to ~0.45 ms
+#endif
+
+  TIMSKx = _BV(OCIExA); // Enable interrupt.
 }
 
 
@@ -254,22 +300,24 @@ void turn_on_modulation() {
 }
 
 void turn_on_IR_ticks_timer() {
+  //digitalWrite(IR_PIN, HIGH);
   // Start Timer 3 to clock out all IR data.
   // Set the time to one before OC to immediately trigger a Output Compare event.
-  TCNT3   = OCR3A - 1;
+  TCNTx   = OCRxA - 1;
   // Turn on clock
-  TCCR3B |= _BV(CS30);
+  TCCRxB |= CLOCK_SELECT;
 }
 
 
 void turn_off_IR_ticks_timer() {
-  TCCR3B &= ~(_BV(CS30)); // Turn off clock
+  //digitalWrite(IR_PIN, LOW);
+  TCCRxB &= ~CLOCK_SELECT  ; // Turn off clock
 }
 
 // The Timer 1 Output Capture is turned on at the end of a 'HIGH' tick in the IR pulse train,
 // and only used to safely shut down the Timer 1 generated 38 kHz modulation.
 ISR(TIMER1_COMPA_vect) {
-  if (digitalRead(9) == LOW) {
+  if (digitalRead(IR_PIN) == LOW) {
     // Can only turn off while the IR modulation is off;
     turn_off_modulation_from_isr(); 
   }
@@ -277,7 +325,7 @@ ISR(TIMER1_COMPA_vect) {
 
 // Interrupt routine for the Timer 3 Output Compare.
 // Handles the timing needed to send the IR data package.
-ISR(TIMER3_COMPA_vect) {
+ISR(TIMERx_COMPA_vect) {
   // ISR local variables
   static byte ir_send_state    = 0;
   static byte ir_send_byte     = 0;
