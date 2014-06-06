@@ -104,6 +104,15 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define MODE_HEAT 0b10
 #define MODE_COOL 0b01
 #define MODE_DRY  0b11
+const char* mode_string(byte mode) {
+  switch (mode) {
+    case MODE_FAN:  return "fan";
+    case MODE_HEAT: return "heat";
+    case MODE_COOL: return "cool";
+    case MODE_DRY:  return "dry";
+    default:        return "unknown";
+  }
+}
 
 // Values for bs_state
 #define STATE_ON              0b100
@@ -111,25 +120,66 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define STATE_CMD             0b110
 #define STATE_FULL_EFFECT_ON  0b011
 #define STATE_FULL_EFFECT_OFF 0b111
+const char* state_string(byte value) {
+  switch (value) {
+    case STATE_ON:              return "on";
+    case STATE_OFF:             return "off";
+    case STATE_CMD:             return "command";
+    case STATE_FULL_EFFECT_ON:  return "full effect on";
+    case STATE_FULL_EFFECT_OFF: return "full effect off";
+    default:                    return "unknown";
+  }
+}
 
 // Values for bs_rotate
 #define ROTATE_ON    0b011
 #define ROTATE_OFF   0b101
 #define ROTATE_SWING 0b111
+const char* rotate_string(byte value) {
+  switch (value) {
+    case ROTATE_ON:    return "on";
+    case ROTATE_OFF:   return "off";
+    case ROTATE_SWING: return "swing";
+    default:           return "unknown";
+  }
+}
 
 // Values for bs_clean
 #define CLEAN_ON   0b01
 #define CLEAN_OFF  0b10
+const char* clean_string(byte value) {
+  switch (value) {
+    case CLEAN_ON:  return "on";
+    case CLEAN_OFF: return "off";
+    default:        return "unknown";
+  }
+}
 
 // Values for bs_fan_strength
 #define STRENGTH_SLOW   0b110
 #define STRENGTH_MEDIUM 0b101
 #define STRENGTH_FAST   0b111
 #define STRENGTH_AUTO   0b010
+const char* strength_string(byte value) {
+  switch (value) {
+    case STRENGTH_SLOW:   return "slow";
+    case STRENGTH_MEDIUM: return "medium";
+    case STRENGTH_FAST:   return "fast";
+    case STRENGTH_AUTO:   return "auto";
+    default:              return "unknown";
+  }
+}
 
 // Values for bs_ion
 #define ION_ON  0b1
 #define ION_OFF 0b0
+const char* ion_string(byte value) {
+  switch (value) {
+    case ION_ON:  return "on";
+    case ION_OFF: return "off";
+    default:      return "unknown";
+  }
+}
 
 // String helpers
 #define str_equals(str, str_literal, len) (len == (sizeof(str_literal) - 1 /* '\0' */) && strncmp(str, str_literal, len) == 0)
@@ -450,6 +500,9 @@ void execute_off(char *buffer, int length) {
     }                                         \
   } while (0)
 
+#define print_change(str, old_value, new_value)                                        \
+  SerialUI.print("Old " #str " value: "); SerialUI.println(str ## _string(old_value)); \
+  SerialUI.print("New " #str " value: "); SerialUI.println(str ## _string(new_value))
 
 // Turn on/off the "Plasma Cluster"/ion mode.
 void execute_ion(char *buffer, int length) {
@@ -473,8 +526,7 @@ void execute_ion(char *buffer, int length) {
     return;
   }
 
-  SerialUI.print("Old ion value: "); SerialUI.println(old_value);
-  SerialUI.print("New ion value: "); SerialUI.println(new_value);
+  print_change(ion, old_value, new_value);
 
   set_ir_data(bs_ion, new_value);
   ir_data_finalize_and_send(STATE_CMD);
@@ -574,7 +626,8 @@ void execute_temp(char *buffer, int length) {
     new_temp = value;
   }
 
-  SerialUI.print("Setting temp to: "); SerialUI.println(new_temp);
+  SerialUI.print("Old temp: "); SerialUI.println(old_temp);
+  SerialUI.print("New temp: "); SerialUI.println(new_temp);
 
   set_temp_for_mode(new_temp);
   ir_data_finalize_and_send(STATE_CMD);
@@ -633,8 +686,7 @@ void execute_timer(char *buffer, int length) {
 void execute_mode_selected(byte mode) {
   byte old_value = get_ir_data(bs_mode);
 
-  SerialUI.print("Old mode: "); SerialUI.println(old_value);
-  SerialUI.print("New mode: "); SerialUI.println(mode);
+  print_change(mode, old_value, mode);
 
   set_ir_data(bs_mode, mode);
 
@@ -712,9 +764,6 @@ void execute_swing(char *buffer, int length) {
   byte old_value = get_ir_data(bs_rotate);
   byte new_value = ROTATE_SWING;
 
-  SerialUI.print("Old rotate(swing) value: "); SerialUI.println(old_value);
-  SerialUI.print("New rotate(swing) value: "); SerialUI.println(new_value);
-
   // Ignore arguments.
   set_ir_data(bs_rotate, new_value);
   ir_data_finalize_and_send(STATE_CMD);
@@ -743,8 +792,7 @@ void execute_rotate(char *buffer, int length) {
     new_value = ROTATE_OFF;
   }
 
-  SerialUI.print("Old rotate value: "); SerialUI.println(old_value);
-  SerialUI.print("New rotate value: "); SerialUI.println(new_value);
+  print_change(rotate, old_value, new_value);
 
   set_ir_data(bs_rotate, new_value);
   ir_data_finalize_and_send(STATE_CMD);
@@ -786,8 +834,8 @@ void execute_full_effect(char *buffer, int length) {
     return;
   }
 
-  SerialUI.print("Old full mode: "); SerialUI.println(old_value);
-  SerialUI.print("New full mode: "); SerialUI.println(new_value);
+  print_change(state, old_value, new_value);
+
 
   if (new_value == STATE_FULL_EFFECT_ON || new_value == STATE_FULL_EFFECT_OFF) {
     // The remote sets this time.
@@ -831,8 +879,8 @@ void execute_strength(char *buffer, int length) {
     return;
   }
 
-  SerialUI.print("Old strength: "); SerialUI.println(old_value);
-  SerialUI.print("New strength: "); SerialUI.println(new_value);
+
+  print_change(strength, old_value, new_value);
 
   set_ir_data(bs_fan_strength, new_value);
   ir_data_finalize_and_send(STATE_CMD);
