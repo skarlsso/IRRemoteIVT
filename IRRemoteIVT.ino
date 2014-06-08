@@ -761,7 +761,6 @@ void execute_mode(char* buffer, int length) {
 void execute_swing(char *buffer, int length) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_rotate);
   byte new_value = ROTATE_SWING;
 
   // Ignore arguments.
