@@ -237,13 +237,12 @@ inline byte invert(byte value, byte bits) {
 #define get_ir_data(bf) MAYBE_INVERT(bf, ((ir_data[bf.index] & BS_MASK(bf)) >> bf.offset))
 
 
-// Update the IR data package with the correct 4 bit parity.
-void ir_data_update_parity() {
+byte calculate_parity(byte* ir_buffer) {
   byte parity = 0;
 
   // Calculate 8 bytes parity, including the previous parity.
   for (int i = 0; i < NUM_IR_BYTES; i++) {
-    parity ^= ir_data[i];
+    parity ^= ir_buffer[i];
   }
 
   // 8 bytes parity => 4 bytes parity
@@ -251,7 +250,13 @@ void ir_data_update_parity() {
   parity &= 0x0F;
 
   // xor:ing will get rid of previous parity.
-  ir_data[NUM_IR_BYTES - 1] ^= parity;
+  return (ir_buffer[NUM_IR_BYTES - 1] ^ parity) & 0x0F;
+}
+
+// Update the IR data package with the correct 4 bit parity.
+void ir_data_update_parity() {
+  ir_data[NUM_IR_BYTES - 1] &= 0xF0;
+  ir_data[NUM_IR_BYTES - 1] |= calculate_parity((byte*)ir_data);
 }
 
 #if defined(__AVR_ATmega32U4__)
@@ -335,7 +340,7 @@ void turn_off_IR_ticks_timer() {
 ISR(TIMER1_COMPA_vect) {
   if (digitalRead(IR_PIN) == LOW) {
     // Can only turn off while the IR modulation is off;
-    turn_off_modulation_from_isr(); 
+    turn_off_modulation_from_isr();
   }
 }
 
@@ -565,6 +570,21 @@ void set_temp_for_mode(int temp) {
   }
 }
 
+byte hex_value(char value) {
+  if (value >= '0' && value <= '9') {
+    return value - '0';
+  }
+
+  if (value >= 'A' && value <= 'F') {
+    return value - 'A' + 10;
+  }
+
+  if (value >= 'a' && value <= 'f') {
+    return value - 'a' + 10;
+  }
+
+  return -1;
+}
 
 int a_to_positive_number(char* buffer, int length) {
   int value = 0;
@@ -885,6 +905,51 @@ void execute_strength(char *buffer, int length) {
   ir_data_finalize_and_send(STATE_CMD);
 }
 
+void execute_raw(char *buffer, int length) {
+  TRIM(buffer, length);
+
+  if (length != NUM_IR_BYTES * 2) {
+    // Illegal argument.
+    SerialUI.print("Incorrect number of digits: "); SerialUI.println(length);
+    return;
+  }
+
+  byte raw_data[NUM_IR_BYTES];
+
+  for (int i = 0; i < NUM_IR_BYTES; i++) {
+     byte high = hex_value(buffer[i * 2 + 0]);
+     byte low  = hex_value(buffer[i * 2 + 1]);
+     if (high == -1 || low == -1) {
+        SerialUI.print("Garbage Input: "); SerialUI.print(buffer[i * 2 + 0]); SerialUI.println(buffer[i * 2 + 1]);
+        return; // Garbage input
+     }
+     raw_data[i] = high * 16 +   low;
+  }
+
+  byte parity = calculate_parity(raw_data);
+  if (parity != (raw_data[NUM_IR_BYTES - 1] & 0x0F)) {
+    SerialUI.print("Invalid parity. Expected: ");
+    SerialUI.print(parity);
+    SerialUI.print(" got: ");
+    SerialUI.println(raw_data[NUM_IR_BYTES - 1] & 0x0F);
+    return;
+  }
+
+  for (int i = 0; i < NUM_IR_BYTES; i++) {
+    ir_data[i] = raw_data[i];
+  }
+
+  if (true) {
+    dump_ir_data();
+  }
+
+  ir_data_send();
+}
+
+void execute_dump(char* buffer, int length) {
+  dump_ir_data();
+}
+
 void execute_help(char *buffer, int length) {
   SerialUI.println("Commands:");
   SerialUI.println("  help  - Print this help text");
@@ -931,6 +996,8 @@ boolean execute_command(char *buffer, int length) {
   execute_command_cond("rotate",   rotate);
   execute_command_cond("full",     full_effect);
   execute_command_cond("strength", strength);
+  execute_command_cond("raw",      raw);
+  execute_command_cond("dump",     dump);
   execute_command_cond("help",     help);
 
   SerialUI.print("No such command: ");
@@ -953,7 +1020,7 @@ void setup()  {
 
   setup_modulation_timer();
   setup_IR_tick_timer();
- 
+
   // Arduino Serial Monitor - extra debugging.
   SerialDebug.begin(9600);
 
