@@ -30,7 +30,7 @@
 
 // Setup what serial ports to use.
 //
-// The Pro Micro uses:
+// The Pro Micro uses:U
 //  Serial1 to communicate over the TX_PIN and RX_PIN pins.
 //  Serial communicate to the Serial Monitor, through the USB connection.
 
@@ -471,7 +471,7 @@ void ir_data_send() {
 }
 
 // Make the IR data package complete and send it out to the IR port.
-void ir_data_finalize_and_send(byte state, byte debug = 0) {
+void ir_data_finalize_and_send(byte state, boolean send_ir, byte debug = 0) {
   // Must always set state.
   set_ir_data(bs_state, state);
   ir_data_update_parity();
@@ -480,21 +480,23 @@ void ir_data_finalize_and_send(byte state, byte debug = 0) {
     dump_ir_data();
   }
 
-  ir_data_send();
+  if (send_ir) {
+    ir_data_send();
+  }
 }
 
 
 // Commands
 // ========
 
-void execute_on(char *buffer, int length) {
+void execute_on(char *buffer, int length, boolean send_ir) {
   // Ignore parameters.
-  ir_data_finalize_and_send(STATE_ON);
+  ir_data_finalize_and_send(STATE_ON, send_ir);
 }
 
-void execute_off(char *buffer, int length) {
+void execute_off(char *buffer, int length, boolean send_ir) {
   // Ignore parameters.
-  ir_data_finalize_and_send(STATE_OFF);
+  ir_data_finalize_and_send(STATE_OFF, send_ir);
 }
 
 #define TRIM(buffer, length)                 \
@@ -510,7 +512,7 @@ void execute_off(char *buffer, int length) {
   SerialUI.print("New " #str " value: "); SerialUI.println(str ## _string(new_value))
 
 // Turn on/off the "Plasma Cluster"/ion mode.
-void execute_ion(char *buffer, int length) {
+void execute_ion(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte old_value = get_ir_data(bs_ion);
@@ -534,7 +536,7 @@ void execute_ion(char *buffer, int length) {
   print_change(ion, old_value, new_value);
 
   set_ir_data(bs_ion, new_value);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 
@@ -600,7 +602,7 @@ int a_to_positive_number(char* buffer, int length) {
 }
 
 // Request a given temperature.
-void execute_temp(char *buffer, int length) {
+void execute_temp(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   if (length <= 0) {
@@ -650,11 +652,11 @@ void execute_temp(char *buffer, int length) {
   SerialUI.print("New temp: "); SerialUI.println(new_temp);
 
   set_temp_for_mode(new_temp);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 // Turn on/off the Cleaning program.
-void execute_clean(char *buffer, int length) {
+void execute_clean(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte state     = get_ir_data(bs_state);
@@ -694,16 +696,16 @@ void execute_clean(char *buffer, int length) {
   }
 
   set_ir_data(bs_clean, new_value);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 // FIXME: Implement the timer features.
-void execute_timer(char *buffer, int length) {
+void execute_timer(char *buffer, int length, boolean send_ir) {
   SerialUI.println("Command not implemented: timer");
 }
 
 // Turn on the selected mode.
-void execute_mode_selected(byte mode) {
+void execute_mode_selected(byte mode, boolean send_ir) {
   byte old_value = get_ir_data(bs_mode);
 
   print_change(mode, old_value, mode);
@@ -723,31 +725,31 @@ void execute_mode_selected(byte mode) {
   set_ir_data(bs_rel_temp, 0);
   set_ir_data(bs_rel_temp_sign, 0);
 
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 // Turn on Heat mode.
-void execute_heat(char *buffer, int length) {
-  execute_mode_selected(MODE_HEAT);
+void execute_heat(char *buffer, int length, boolean send_ir) {
+  execute_mode_selected(MODE_HEAT, send_ir);
 }
 
 // Turn on Cool mode.
-void execute_cool(char *buffer, int length) {
-  execute_mode_selected(MODE_COOL);
+void execute_cool(char *buffer, int length, boolean send_ir) {
+  execute_mode_selected(MODE_COOL, send_ir);
 }
 
 // Turn on Fan mode.
-void execute_fan(char *buffer, int length) {
-  execute_mode_selected(MODE_FAN);
+void execute_fan(char *buffer, int length, boolean send_ir) {
+  execute_mode_selected(MODE_FAN, send_ir);
 }
 
 // Turn on Dry mode.
-void execute_dry(char *buffer, int length) {
-  execute_mode_selected(MODE_DRY);
+void execute_dry(char *buffer, int length, boolean send_ir) {
+  execute_mode_selected(MODE_DRY, send_ir);
 }
 
 // Cycle through the modes.
-void execute_mode(char* buffer, int length) {
+void execute_mode(char* buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte old_value = get_ir_data(bs_mode);
@@ -774,23 +776,23 @@ void execute_mode(char* buffer, int length) {
     return;
   }
 
-  execute_mode_selected(new_value);
+  execute_mode_selected(new_value, send_ir);
 }
 
 // Start/stop swing the air outlet.
-void execute_swing(char *buffer, int length) {
+void execute_swing(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte new_value = ROTATE_SWING;
 
   // Ignore arguments.
   set_ir_data(bs_rotate, new_value);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 // Turn on/off the Rotate feature.
 // FIXME: Figure out what this is.
-void execute_rotate(char *buffer, int length) {
+void execute_rotate(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte old_value = get_ir_data(bs_rotate);
@@ -814,11 +816,11 @@ void execute_rotate(char *buffer, int length) {
   print_change(rotate, old_value, new_value);
 
   set_ir_data(bs_rotate, new_value);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
 // Turn on/off the Full Effect feature.
-void execute_full_effect(char *buffer, int length) {
+void execute_full_effect(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte old_value = get_ir_data(bs_state);
@@ -863,11 +865,11 @@ void execute_full_effect(char *buffer, int length) {
     set_ir_data(bs_time_minutes, 1);
   }
 
-  ir_data_finalize_and_send(new_value);
+  ir_data_finalize_and_send(new_value, send_ir);
 }
 
 // Set fan strength.
-void execute_strength(char *buffer, int length) {
+void execute_strength(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   byte old_value = get_ir_data(bs_fan_strength);
@@ -902,10 +904,10 @@ void execute_strength(char *buffer, int length) {
   print_change(strength, old_value, new_value);
 
   set_ir_data(bs_fan_strength, new_value);
-  ir_data_finalize_and_send(STATE_CMD);
+  ir_data_finalize_and_send(STATE_CMD, send_ir);
 }
 
-void execute_raw(char *buffer, int length) {
+void execute_raw(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
   if (length != NUM_IR_BYTES * 2) {
@@ -943,14 +945,53 @@ void execute_raw(char *buffer, int length) {
     dump_ir_data();
   }
 
-  ir_data_send();
+  if (send_ir) {
+    ir_data_send();
+  }
 }
 
-void execute_dump(char* buffer, int length) {
+void execute_dump(char* buffer, int length, boolean send_ir) {
   dump_ir_data();
 }
 
-void execute_help(char *buffer, int length) {
+
+
+int index_of(const char *buffer, int length, char c) {
+  for (int i = 0; i < length; i++) {
+    if (buffer[i] == '\0')  {
+      return -1;
+    }
+    if (buffer[i] == c) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// Forward declaration
+boolean execute_command(char *buffer, int length, boolean send_ir);
+  
+// Executes multiple commands, but onlysend one ir command.
+// Format: command1 <args...>, command2 <args...>, ..., commandN <args...>,
+// The last command determines the CMD_* state to send.
+void execute_multi(char *buffer, int length, boolean send_ir) {
+  TRIM(buffer, length);
+  while (true) {
+    int delimiter_index = index_of(buffer, length, ',');
+    if (delimiter_index == -1) {
+      break;
+    }
+    
+    execute_command(buffer, delimiter_index, false /* don't send the ir command */);
+    
+    buffer += delimiter_index + 1;
+    length -= delimiter_index + 1;
+  }
+  
+  ir_data_send();
+}
+
+void execute_help(char *buffer, int length, boolean transmit /* ignored */) {
   SerialUI.println("Commands:");
   SerialUI.println("  help  - Print this help text");
   SerialUI.println("  on    - Turn on the device");
@@ -969,15 +1010,18 @@ void execute_help(char *buffer, int length) {
   SerialUI.println("  temp     <+|-|absolute value (18 to 32)|relative value (-2 to 2)]>");
 }
 
-boolean execute_command(char *buffer, int length) {
-  #define execute_command_cond(command_str, command)                            \
-    do {                                                                        \
-      int command_str_len = strlen(command_str);                                \
-      if (str_begins(buffer, command_str, command_str_len)) {                   \
-        SerialUI.print("Executing command: "); SerialUI.println(buffer);        \
-        execute_##command(buffer + command_str_len, length - command_str_len);  \
-        return true;                                                            \
-      }                                                                         \
+boolean execute_command(char *buffer, int length, boolean send_ir = true) {
+  #define execute_command_cond(command_str, command)                                      \
+    do {                                                                                  \
+      TRIM(buffer, length);                                                               \
+      int command_str_len = strlen(command_str);                                          \
+      if (str_begins(buffer, command_str, command_str_len)) {                             \
+        SerialUI.write("Executing command: ");                                            \
+        SerialUI.write((byte*)buffer, length);                                            \
+        SerialUI.write("\r\n");                                                           \
+        execute_##command(buffer + command_str_len, length - command_str_len, send_ir);   \
+        return true;                                                                      \
+      }                                                                                   \
     } while (0)
 
   // All available commands:
@@ -999,9 +1043,11 @@ boolean execute_command(char *buffer, int length) {
   execute_command_cond("raw",      raw);
   execute_command_cond("dump",     dump);
   execute_command_cond("help",     help);
+  execute_command_cond("multi",    multi);
 
-  SerialUI.print("No such command: ");
-  SerialUI.println(buffer);
+  SerialUI.write("No such command: '");
+  SerialUI.write((byte*)buffer, length);
+  SerialUI.write("'\r\n");
 
   return false;
 }
