@@ -974,7 +974,7 @@ int index_of(const char *buffer, int length, char c) {
 
 // Forward declaration
 boolean execute_command(char *buffer, int length, boolean send_ir);
-  
+
 // Executes multiple commands, but onlysend one ir command.
 // Format: command1 <args...>, command2 <args...>, ..., commandN <args...>,
 // The last command determines the CMD_* state to send.
@@ -985,13 +985,13 @@ void execute_multi(char *buffer, int length, boolean send_ir) {
     if (delimiter_index == -1) {
       break;
     }
-    
+
     execute_command(buffer, delimiter_index, false /* don't send the ir command */);
-    
+
     buffer += delimiter_index + 1;
     length -= delimiter_index + 1;
   }
-  
+
   ir_data_send();
 }
 
