@@ -259,7 +259,11 @@ void ir_data_update_parity() {
   ir_data[NUM_IR_BYTES - 1] |= calculate_parity((byte*)ir_data);
 }
 
-#if defined(__AVR_ATmega32U4__)
+#define FORCE_16MHZ 1
+
+#if FORCE_16MHZ
+# define TIME_MULTIPLIER 2
+#elif defined(__AVR_ATmega32U4__)
 # define TIME_MULTIPLIER  2
 #elif defined(__AVR_ATmega328P__)
 # define TIME_MULTIPLIER  1
