@@ -1,3 +1,10 @@
+// Control an IVT Nordic Inverter heat pump by sending commands over
+// the Serial port to a SparkFun Pro Micro Arduino board (ATmega 32u4).
+//
+// Main entry point - dispatches to either the full version or the minimal
+// version depending on the compiler flags used.
+//
+// @author Stefan Karlsson (skarlsso@github)
 #include "globals.hpp"
 
 #include "commands.hpp"

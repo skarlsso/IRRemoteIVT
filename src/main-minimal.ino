@@ -1,21 +1,16 @@
-// Control an IVT Nordic Inverter heat pump by sending commands over
+// Control an IVT Nordic Inverter heat pump by sending raw bytes over
 // the Serial port to a SparkFun Pro Micro Arduino board (ATmega 32u4).
+//
+// The remote controller state machine is implemented externally.
 //
 // Pin 9 => transistor connected to a 940 nm IR LED.
 //
 // Pin 0 => Serial Port tx
 // Pin 1 => Serial Port rx
 //
-// Example commands:
-//  "on"      - Turn on the heat pump.
-//  "off"     - Turn off the heat pump.
-//  "heat"    - Turn on the heating mode.
-//  "fan"     - Turn on the fan with the heating element turned off.
-//  "temp +"  - Increase the temperature one degree.
-//  "temp -"  - Decrease the temperature one degree.
-//  "temp 25" - Set the temperature to 25 degrees.
-//  "full on" - Turn on full effect.
-//   ... and more
+// Command:
+//  "raw <13 bytes hex number>
+//  E.g "raw 555AF308008804001001000F88"
 //
 // @author Stefan Karlsson (skarlsso@github)
 

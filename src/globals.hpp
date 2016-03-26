@@ -1,5 +1,5 @@
 #ifndef IRREMOTEIVT_GLOBALS_HPP
-#define // IRREMOTEIVT_GLOBALS_HPP
+#define IRREMOTEIVT_GLOBALS_HPP
 
 #include <stdint.h>
 

@@ -3,6 +3,9 @@
 
 #include "globals.hpp"
 
+#include "serial.hpp"
+#include "utils.hpp"
+
 void commands_loop(bool (*execute_command_function)(char*, int, bool));
 
 #define execute_command_cond(command_str, command)                                      \
@@ -18,4 +21,4 @@ void commands_loop(bool (*execute_command_function)(char*, int, bool));
     }                                                                                   \
   } while (0)
 
-#endif
+#endif // IRREMOTEIVT_COMMANDS_HPP
