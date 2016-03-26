@@ -30,7 +30,7 @@
 #include "utils.hpp"
 
 // Make the IR data package complete and send it out to the IR port.
-void ir_data_finalize_and_send(uint8_t state, bool send_ir, uint8_t debug = 0) {
+static void ir_data_finalize_and_send(uint8_t state, bool send_ir, uint8_t debug = 0) {
   // Must always set state.
   set_ir_data(bs_state, state);
   ir_data_update_parity();
@@ -48,12 +48,12 @@ void ir_data_finalize_and_send(uint8_t state, bool send_ir, uint8_t debug = 0) {
 // Commands
 // ========
 
-void execute_on(char *buffer, int length, bool send_ir) {
+static void execute_on(char *buffer, int length, bool send_ir) {
   // Ignore parameters.
   ir_data_finalize_and_send(STATE_ON, send_ir);
 }
 
-void execute_off(char *buffer, int length, bool send_ir) {
+static void execute_off(char *buffer, int length, bool send_ir) {
   // Ignore parameters.
   ir_data_finalize_and_send(STATE_OFF, send_ir);
 }
@@ -63,7 +63,7 @@ void execute_off(char *buffer, int length, bool send_ir) {
   SerialUI.print("New " #str " value: "); SerialUI.println(str ## _string(new_value))
 
 // Turn on/off the "Plasma Cluster"/ion mode.
-void execute_ion(char *buffer, int length, bool send_ir) {
+static void execute_ion(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t old_value = get_ir_data(bs_ion);
@@ -93,19 +93,19 @@ void execute_ion(char *buffer, int length, bool send_ir) {
 
 // Helper functions to get/set the temperature.
 
-uint8_t mode_uses_absolute_time() {
+static uint8_t mode_uses_absolute_time() {
    uint8_t mode = get_ir_data(bs_mode);
   return mode == MODE_HEAT || mode == MODE_COOL;
 }
-int max_temp_for_mode() {
+static int max_temp_for_mode() {
   return mode_uses_absolute_time() ? 32 : 2;
 }
 
-int min_temp_for_mode() {
+static int min_temp_for_mode() {
   return mode_uses_absolute_time() ? 18 : -2;
 }
 
-int get_temp_for_mode() {
+static int get_temp_for_mode() {
   if (mode_uses_absolute_time()) {
     // The temp bits are relative +17C.
     return 17 + get_ir_data(bs_abs_temp);
@@ -114,7 +114,7 @@ int get_temp_for_mode() {
   }
 }
 
-void set_temp_for_mode(int temp) {
+static void set_temp_for_mode(int temp) {
   if (mode_uses_absolute_time()) {
     set_ir_data(bs_abs_temp, temp - 17);
   } else {
@@ -124,7 +124,7 @@ void set_temp_for_mode(int temp) {
 }
 
 // Request a given temperature.
-void execute_temp(char *buffer, int length, bool send_ir) {
+static void execute_temp(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   if (length <= 0) {
@@ -178,7 +178,7 @@ void execute_temp(char *buffer, int length, bool send_ir) {
 }
 
 // Turn on/off the Cleaning program.
-void execute_clean(char *buffer, int length, bool send_ir) {
+static void execute_clean(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t state     = get_ir_data(bs_state);
@@ -222,12 +222,12 @@ void execute_clean(char *buffer, int length, bool send_ir) {
 }
 
 // FIXME: Implement the timer features.
-void execute_timer(char *buffer, int length, bool send_ir) {
+static void execute_timer(char *buffer, int length, bool send_ir) {
   SerialUI.println("Command not implemented: timer");
 }
 
 // Turn on the selected mode.
-void execute_mode_selected(uint8_t mode, bool send_ir) {
+static void execute_mode_selected(uint8_t mode, bool send_ir) {
   uint8_t old_value = get_ir_data(bs_mode);
 
   print_change(mode, old_value, mode);
@@ -251,27 +251,27 @@ void execute_mode_selected(uint8_t mode, bool send_ir) {
 }
 
 // Turn on Heat mode.
-void execute_heat(char *buffer, int length, bool send_ir) {
+static void execute_heat(char *buffer, int length, bool send_ir) {
   execute_mode_selected(MODE_HEAT, send_ir);
 }
 
 // Turn on Cool mode.
-void execute_cool(char *buffer, int length, bool send_ir) {
+static void execute_cool(char *buffer, int length, bool send_ir) {
   execute_mode_selected(MODE_COOL, send_ir);
 }
 
 // Turn on Fan mode.
-void execute_fan(char *buffer, int length, bool send_ir) {
+static void execute_fan(char *buffer, int length, bool send_ir) {
   execute_mode_selected(MODE_FAN, send_ir);
 }
 
 // Turn on Dry mode.
-void execute_dry(char *buffer, int length, bool send_ir) {
+static void execute_dry(char *buffer, int length, bool send_ir) {
   execute_mode_selected(MODE_DRY, send_ir);
 }
 
 // Cycle through the modes.
-void execute_mode(char* buffer, int length, bool send_ir) {
+static void execute_mode(char* buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t old_value = get_ir_data(bs_mode);
@@ -302,7 +302,7 @@ void execute_mode(char* buffer, int length, bool send_ir) {
 }
 
 // Start/stop swing the air outlet.
-void execute_swing(char *buffer, int length, bool send_ir) {
+static void execute_swing(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t new_value = ROTATE_SWING;
@@ -314,7 +314,7 @@ void execute_swing(char *buffer, int length, bool send_ir) {
 
 // Turn on/off the Rotate feature.
 // FIXME: Figure out what this is.
-void execute_rotate(char *buffer, int length, bool send_ir) {
+static void execute_rotate(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t old_value = get_ir_data(bs_rotate);
@@ -342,7 +342,7 @@ void execute_rotate(char *buffer, int length, bool send_ir) {
 }
 
 // Turn on/off the Full Effect feature.
-void execute_full_effect(char *buffer, int length, bool send_ir) {
+static void execute_full_effect(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t old_value = get_ir_data(bs_state);
@@ -391,7 +391,7 @@ void execute_full_effect(char *buffer, int length, bool send_ir) {
 }
 
 // Set fan strength.
-void execute_strength(char *buffer, int length, bool send_ir) {
+static void execute_strength(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   uint8_t old_value = get_ir_data(bs_fan_strength);
@@ -430,7 +430,7 @@ void execute_strength(char *buffer, int length, bool send_ir) {
 }
 
 
-void execute_dump(char* buffer, int length, bool send_ir) {
+static void execute_dump(char* buffer, int length, bool send_ir) {
   dump_ir_data();
 }
 
@@ -453,7 +453,7 @@ bool execute_commands_full(char *buffer, int length, bool send_ir);
 // Executes multiple commands, but onlysend one ir command.
 // Format: command1 <args...>, command2 <args...>, ..., commandN <args...>,
 // The last command determines the CMD_* state to send.
-void execute_multi(char *buffer, int length, bool send_ir) {
+static void execute_multi(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
   while (true) {
     int delimiter_index = index_of(buffer, length, ',');
@@ -470,7 +470,7 @@ void execute_multi(char *buffer, int length, bool send_ir) {
   ir_data_send();
 }
 
-void execute_help(char *buffer, int length, bool transmit /* ignored */) {
+static void execute_help(char *buffer, int length, bool transmit /* ignored */) {
   SerialUI.println("Commands:");
   SerialUI.println("  help  - Print this help text");
   SerialUI.println("  on    - Turn on the device");

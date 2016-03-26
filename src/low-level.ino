@@ -29,7 +29,7 @@
 // Timer functions
 // ===============
 
-void setup_modulation_timer() {
+static void setup_modulation_timer() {
  // Timer 1 is setup as a 38 kHz modulation timer with toggling Output Compare.
   TCCR1A = 0;
   TCCR1B = 0;
@@ -43,7 +43,7 @@ void setup_modulation_timer() {
   OCR1A = 105 * TIME_MULTIPLIER;
 }
 
-void setup_IR_tick_timer() {
+static void setup_IR_tick_timer() {
   // Timer 0 is time the ticks in the IR signal train of one IR data package.
   TCCR0A = 0;
   TCCR0B = 0;
@@ -62,25 +62,25 @@ void setup_IR_tick_timer() {
 }
 
 // Turn off the 38 kHz modulation.
-void turn_off_modulation() {
+static void turn_off_modulation() {
   // Enable Timer1 interrupt and let the ISR turn
   // off the modulation at an appropriate point.
   TIMSK1 |= _BV(OCIE1A); // Enable interrupt.
 }
 
-void turn_off_modulation_from_isr() {
+static void turn_off_modulation_from_isr() {
   TCCR1A &= ~(_BV(COM1A0));
   TIMSK1 &= ~(_BV(OCIE1A)); // Disable interrupt
 }
 
 // Turn on the 38 kHz modulation.
-void turn_on_modulation() {
+static void turn_on_modulation() {
   TCNT1 = 0;
   TCCR1A |= _BV(COM1A0);
   TCCR1C |= _BV(FOC1A); // Force output compare
 }
 
-void turn_on_IR_ticks_timer() {
+static void turn_on_IR_ticks_timer() {
   //digitalWrite(IR_PIN, HIGH);
   // Start Timer 3 to clock out all IR data.
   // Set the time to one before OC to immediately trigger a Output Compare event.
