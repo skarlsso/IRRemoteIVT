@@ -1,3 +1,5 @@
+#include "globals.hpp"
+
 #include "ir-data-description.hpp"
 #include "ir-data.hpp"
 
