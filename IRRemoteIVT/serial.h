@@ -3,6 +3,8 @@
 
 #include "globals.h"
 
+#include "Arduino.h"
+
 // Setup what serial ports to use.
 //
 // The Pro Micro uses:
