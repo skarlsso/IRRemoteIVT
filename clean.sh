@@ -1,1 +1,1 @@
-ino clean
+pio run -t clean

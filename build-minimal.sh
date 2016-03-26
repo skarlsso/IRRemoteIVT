@@ -1,4 +1,7 @@
 #!/bin/bash
 
-# Build the version with only the 'raw' command.
-./build-impl.sh 0
+# Uses PlatformIO to build
+
+# Build the minimal version, that only supports sendin raw bytes.
+# The correct byte sequence is built by some external program.
+pio run -e minimal

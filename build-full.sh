@@ -1,4 +1,6 @@
 #!/bin/bash
 
-# Build the standalone version with all commands..
-./build-impl.sh 1
+# Uses PlatformIO to build
+
+# Build the full, standalone version with all commands..
+pio run -e full
