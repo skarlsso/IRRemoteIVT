@@ -58,7 +58,11 @@ static void setup_IR_tick_timer() {
   // 0.45 ms - 8MHz or 16Mhz /w 8 prescaler
   OCR0A = 58 * TIME_MULTIPLIER;
 
-  TIMSK0 = _BV(OCIE0A); // Enable interrupt.
+  // Make sure the interrupt bits are cleared before interrupts are enabled.
+  TIFR0 |= (_BV(OCF0A) | _BV(OCF0B));
+
+  //TIMSK0 = _BV(OCIE0A); // Enable interrupt.
+  TIMSK0 = _BV(OCIE0A); // Enable interrupt
 }
 
 // Turn off the 38 kHz modulation.
