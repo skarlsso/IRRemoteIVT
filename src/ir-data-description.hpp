@@ -125,28 +125,7 @@ inline const char* ion_string(uint8_t value) {
   }
 }
 
-// Invert the 'bits' number of bits in the 'value' uint8_t.
-inline uint8_t invert(uint8_t value, uint8_t bits) {
-  uint8_t inverted = 0;
-  for (int i = 0; i < bits; i++) {
-    inverted <<= 1;
-    inverted |= value & 1;
-    value >>= 1;
-  }
-
-  return inverted;
-}
-
-
-// Helper macros to extract and set values in the BitSegments.
-
-#define MAYBE_INVERT(bs, value) ((bs.inverted == 1) ? invert(value, bs.bits) : value)
-
-#define BS_MASK(bs) (((1 << bs.bits) - 1) << bs.offset)
-#define IR_DATA_CLEAR_BITS(bs)      ir_data[bs.index] &= ~BS_MASK(bs)
-#define IR_DATA_SET_BITS(bs, value) ir_data[bs.index] |= (((value) << bs.offset) & BS_MASK(bs))
-
-#define set_ir_data(bf, value) IR_DATA_CLEAR_BITS(bf); IR_DATA_SET_BITS(bf, MAYBE_INVERT(bf, value));
-#define get_ir_data(bf) MAYBE_INVERT(bf, ((ir_data[bf.index] & BS_MASK(bf)) >> bf.offset))
+void set_ir_data(const BitSegment& bs, uint8_t value);
+uint8_t get_ir_data(const BitSegment& bs);
 
 #endif // IRREMOTEIVT_IR_DATA_DESCRIPTION_HPP

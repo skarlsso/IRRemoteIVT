@@ -35,7 +35,4 @@ inline void ir_data_update_parity() {
   ir_data[NUM_IR_BYTES - 1] |= calculate_parity((uint8_t*)ir_data);
 }
 
-// Update the IR data package with the correct 4 bit parity.
-void ir_data_update_parity();
-
 #endif // IRREMOTEIVT_IR_DATA_HPP
