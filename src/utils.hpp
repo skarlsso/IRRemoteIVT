@@ -1,7 +1,9 @@
 #ifndef IRREMOTEIVT_UTILS_HPP
 #define IRREMOTEIVT_UTILS_HPP
 
-inline byte hex_value(char value) {
+#include "globals.hpp"
+
+inline uint8_t hex_value(char value) {
   if (value >= '0' && value <= '9') {
     return value - '0';
   }

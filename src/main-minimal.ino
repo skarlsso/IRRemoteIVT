@@ -19,6 +19,8 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
+#include "globals.hpp"
+
 #include "commands.hpp"
 #include "debug.hpp"
 #include "low-level.hpp"
@@ -34,11 +36,11 @@ static void execute_raw(char *buffer, int length, boolean send_ir) {
     return;
   }
 
-  byte raw_data[NUM_IR_BYTES];
+  uint8_t raw_data[NUM_IR_BYTES];
 
   for (int i = 0; i < NUM_IR_BYTES; i++) {
-     byte high = hex_value(buffer[i * 2 + 0]);
-     byte low  = hex_value(buffer[i * 2 + 1]);
+     uint8_t high = hex_value(buffer[i * 2 + 0]);
+     uint8_t low  = hex_value(buffer[i * 2 + 1]);
      if (high == -1 || low == -1) {
         SerialUI.print("Garbage Input: "); SerialUI.print(buffer[i * 2 + 0]); SerialUI.println(buffer[i * 2 + 1]);
         return; // Garbage input
@@ -46,7 +48,7 @@ static void execute_raw(char *buffer, int length, boolean send_ir) {
      raw_data[i] = high * 16 +   low;
   }
 
-  byte parity = calculate_parity(raw_data);
+  uint8_t parity = calculate_parity(raw_data);
   if (parity != (raw_data[NUM_IR_BYTES - 1] & 0x0F)) {
     SerialUI.print("Invalid parity. Expected: ");
     SerialUI.print(parity);
@@ -70,7 +72,7 @@ boolean execute_commands_minimal(char *buffer, int length, boolean send_ir) {
   execute_command_cond("raw", raw);
 
   SerialUI.write("No such command: '");
-  SerialUI.write((byte*)buffer, length);
+  SerialUI.write((uint8_t*)buffer, length);
   SerialUI.write("'\r\n");
 
   return false;

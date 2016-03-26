@@ -19,6 +19,8 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
+#include "globals.hpp"
+
 #include "commands.hpp"
 #include "debug.hpp"
 #include "low-level.hpp"
@@ -26,7 +28,7 @@
 #include "utils.hpp"
 
 // Make the IR data package complete and send it out to the IR port.
-void ir_data_finalize_and_send(byte state, boolean send_ir, byte debug = 0) {
+void ir_data_finalize_and_send(uint8_t state, boolean send_ir, uint8_t debug = 0) {
   // Must always set state.
   set_ir_data(bs_state, state);
   ir_data_update_parity();
@@ -62,8 +64,8 @@ void execute_off(char *buffer, int length, boolean send_ir) {
 void execute_ion(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_ion);
-  byte new_value;
+  uint8_t old_value = get_ir_data(bs_ion);
+  uint8_t new_value;
 
   if (length == 0) {
     // Toggle the value.
@@ -89,8 +91,8 @@ void execute_ion(char *buffer, int length, boolean send_ir) {
 
 // Helper functions to get/set the temperature.
 
-byte mode_uses_absolute_time() {
-   byte mode = get_ir_data(bs_mode);
+uint8_t mode_uses_absolute_time() {
+   uint8_t mode = get_ir_data(bs_mode);
   return mode == MODE_HEAT || mode == MODE_COOL;
 }
 int max_temp_for_mode() {
@@ -138,7 +140,7 @@ void execute_temp(char *buffer, int length, boolean send_ir) {
     new_temp = old_temp - ((old_temp > min_temp_for_mode()) ? 1 : 0);
 
   } else {
-    byte negative = buffer[0] == '-';
+    uint8_t negative = buffer[0] == '-';
 
     int value = a_to_positive_number(buffer + (negative ? 1 : 0), length - (negative ? 1 : 0));
     if (value == -1) {
@@ -177,9 +179,9 @@ void execute_temp(char *buffer, int length, boolean send_ir) {
 void execute_clean(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte state     = get_ir_data(bs_state);
-  byte old_value = get_ir_data(bs_clean);
-  byte new_value = old_value;
+  uint8_t state     = get_ir_data(bs_state);
+  uint8_t old_value = get_ir_data(bs_clean);
+  uint8_t new_value = old_value;
 
   if (length == 0) {
     // Toggle.
@@ -223,8 +225,8 @@ void execute_timer(char *buffer, int length, boolean send_ir) {
 }
 
 // Turn on the selected mode.
-void execute_mode_selected(byte mode, boolean send_ir) {
-  byte old_value = get_ir_data(bs_mode);
+void execute_mode_selected(uint8_t mode, boolean send_ir) {
+  uint8_t old_value = get_ir_data(bs_mode);
 
   print_change(mode, old_value, mode);
 
@@ -270,8 +272,8 @@ void execute_dry(char *buffer, int length, boolean send_ir) {
 void execute_mode(char* buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_mode);
-  byte new_value;
+  uint8_t old_value = get_ir_data(bs_mode);
+  uint8_t new_value;
 
   if (length == 0) {
     // Cycle through the modes.
@@ -301,7 +303,7 @@ void execute_mode(char* buffer, int length, boolean send_ir) {
 void execute_swing(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte new_value = ROTATE_SWING;
+  uint8_t new_value = ROTATE_SWING;
 
   // Ignore arguments.
   set_ir_data(bs_rotate, new_value);
@@ -313,8 +315,8 @@ void execute_swing(char *buffer, int length, boolean send_ir) {
 void execute_rotate(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_rotate);
-  byte new_value = old_value;
+  uint8_t old_value = get_ir_data(bs_rotate);
+  uint8_t new_value = old_value;
 
   if (length == 0) {
     // Toggle.
@@ -341,8 +343,8 @@ void execute_rotate(char *buffer, int length, boolean send_ir) {
 void execute_full_effect(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_state);
-  byte new_value = old_value;
+  uint8_t old_value = get_ir_data(bs_state);
+  uint8_t new_value = old_value;
 
   if (length == 0) {
     // Toggle.
@@ -390,8 +392,8 @@ void execute_full_effect(char *buffer, int length, boolean send_ir) {
 void execute_strength(char *buffer, int length, boolean send_ir) {
   TRIM(buffer, length);
 
-  byte old_value = get_ir_data(bs_fan_strength);
-  byte new_value;
+  uint8_t old_value = get_ir_data(bs_fan_strength);
+  uint8_t new_value;
 
   if (length == 0) {
     // Cycle through the values.
@@ -507,7 +509,7 @@ boolean execute_commands_full(char *buffer, int length, boolean send_ir) {
   execute_command_cond("multi",    multi);
 
   SerialUI.write("No such command: '");
-  SerialUI.write((byte*)buffer, length);
+  SerialUI.write((uint8_t*)buffer, length);
   SerialUI.write("'\r\n");
 
   return false;

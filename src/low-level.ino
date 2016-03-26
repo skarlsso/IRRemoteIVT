@@ -19,6 +19,8 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
+#include "globals.hpp"
+
 #include "low-level.hpp"
 
 // Pin mapping
@@ -33,14 +35,14 @@
 //
 // Bytes containing the state which will be send upon request.
 // This following values are a reasonable default.
-volatile byte ir_data[NUM_IR_BYTES] =
+volatile uint8_t ir_data[NUM_IR_BYTES] =
    { 0x55,    0x5A,    0xF3,    0x08,    0x00,    0x88,    0x04,    0x00,    0x10,    0x01,    0x00,    0x0F,    0x88 };
  //  Always the same____________________ TEMP  0  1000XXX  MO  FAN  x60m_    RRX10000 00000001 MINUTS 0 00N01111 1000CRC_
  //  01010101 01011010 11110011 00001000 00000000 10001000 00000100 00000000 00010000 00000001 00000000 00001111 10001000
 
-// Invert the 'bits' number of bits in the 'value' byte.
-byte invert(byte value, byte bits) {
-  byte inverted = 0;
+// Invert the 'bits' number of bits in the 'value' uint8_t.
+uint8_t invert(uint8_t value, uint8_t bits) {
+  uint8_t inverted = 0;
   for (int i = 0; i < bits; i++) {
     inverted <<= 1;
     inverted |= value & 1;
@@ -50,22 +52,22 @@ byte invert(byte value, byte bits) {
   return inverted;
 }
 
-void replace_ir_data(byte data[NUM_IR_BYTES]) {
+void replace_ir_data(uint8_t data[NUM_IR_BYTES]) {
   for (int i = 0; i < NUM_IR_BYTES; i++) {
     ir_data[i] = data[i];
   }
 }
 
 
-byte calculate_parity(byte* ir_buffer) {
-  byte parity = 0;
+uint8_t calculate_parity(uint8_t* ir_buffer) {
+  uint8_t parity = 0;
 
-  // Calculate 8 bytes parity, including the previous parity.
+  // Calculate 8 uint8_ts parity, including the previous parity.
   for (int i = 0; i < NUM_IR_BYTES; i++) {
     parity ^= ir_buffer[i];
   }
 
-  // 8 bytes parity => 4 bytes parity
+  // 8 uint8_ts parity => 4 uint8_ts parity
   parity ^= (parity >> 4);
   parity &= 0x0F;
 
@@ -76,7 +78,7 @@ byte calculate_parity(byte* ir_buffer) {
 // Update the IR data package with the correct 4 bit parity.
 void ir_data_update_parity() {
   ir_data[NUM_IR_BYTES - 1] &= 0xF0;
-  ir_data[NUM_IR_BYTES - 1] |= calculate_parity((byte*)ir_data);
+  ir_data[NUM_IR_BYTES - 1] |= calculate_parity((uint8_t*)ir_data);
 }
 
 #define FORCE_16MHZ 1
@@ -170,11 +172,11 @@ ISR(TIMER1_COMPA_vect) {
 // Handles the timing needed to send the IR data package.
 ISR(TIMER0_COMPA_vect) {
   // ISR local variables
-  static byte ir_send_state    = 0;
-  static byte ir_send_byte     = 0;
-  static byte ir_send_bit      = 0;
-  static byte ir_send_bit_tick = 0;
-  static byte previous_output  = false;
+  static uint8_t ir_send_state    = 0;
+  static uint8_t ir_send_uint8_t     = 0;
+  static uint8_t ir_send_bit      = 0;
+  static uint8_t ir_send_bit_tick = 0;
+  static uint8_t previous_output  = false;
 
   // IR data package state machine.
   //
@@ -194,7 +196,7 @@ ISR(TIMER0_COMPA_vect) {
   //                   Preamble     0 1   0 1   0 1   1
   //  Ticks & output:  HHHHHHHHLLLLHLHLLLHLHLLLHLHLLLHLLLH
 
-  byte enable_output;
+  uint8_t enable_output;
 
   if (ir_send_state < 8) {
     // The start of the send sequence is 8 ticks with the output held high ...
@@ -212,7 +214,7 @@ ISR(TIMER0_COMPA_vect) {
     enable_output = true;
 
     // Prepare first bit.
-    ir_send_byte     = 0;
+    ir_send_uint8_t     = 0;
     ir_send_bit      = 8;
     ir_send_bit_tick = 1; // Set to 1, since pre-decremented below.
 
@@ -226,17 +228,17 @@ ISR(TIMER0_COMPA_vect) {
       // All ticks done for this bit; fetch new bit.
 
       if (ir_send_bit > 0) {
-        // More bits to send in the current byte.
+        // More bits to send in the current uint8_t.
         ir_send_bit--;
       } else {
-        // All bits sent. Fetch a new byte.
+        // All bits sent. Fetch a new uint8_t.
         ir_send_bit = 7;
-        ir_send_byte++;
+        ir_send_uint8_t++;
       }
 
-      if (ir_send_byte < NUM_IR_BYTES) {
-        byte ir_byte = ir_data[ir_send_byte];
-        byte ir_bit  = ir_byte & (1 << ir_send_bit);
+      if (ir_send_uint8_t < NUM_IR_BYTES) {
+        uint8_t ir_uint8_t = ir_data[ir_send_uint8_t];
+        uint8_t ir_bit  = ir_uint8_t & (1 << ir_send_bit);
         // 0 bit => 1 tick  low + 1 tick high
         // 1 bit => 3 ticks low + 1 tick high
         ir_send_bit_tick = ((ir_bit == 0) ? 1 : 3) + 1;
@@ -245,7 +247,7 @@ ISR(TIMER0_COMPA_vect) {
         enable_output = false;
 
       } else {
-        // This was the last byte. Got to end state.
+        // This was the last uint8_t. Got to end state.
         ir_send_state++;
 
         // Last bit. Pull the line low.

@@ -1,6 +1,8 @@
 #ifndef IRREMOTEIVT_COMMANDS_HPP
 #define IRREMOTEIVT_COMMANDS_HPP
 
+#include "globals.hpp"
+
 void commands_loop(boolean (*execute_command_function)(char*, int, boolean));
 
 #define execute_command_cond(command_str, command)                                      \

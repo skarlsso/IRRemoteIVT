@@ -1,21 +1,21 @@
 #ifndef IRREMOTEIVT_LOW_LEVEL_HPP
 #define IRREMOTEIVT_LOW_LEVEL_HPP
 
-#include <stdint.h>
+#include "globals.hpp"
 
 // Bytes per IR package
 #define NUM_IR_BYTES 13
 
 void setup_low_level();
 
-extern volatile byte ir_data[NUM_IR_BYTES];
+extern volatile uint8_t ir_data[NUM_IR_BYTES];
 
 // The BitSegment describe segments of the IR package.
 struct BitSegment {
-  byte index;     // byte position in the IR package
-  byte offset;    // bit offset in the byte
-  byte bits;      // bits in field
-  byte inverted;  // if the bits should reversed before used as a number
+  uint8_t index;     // uint8_t position in the IR package
+  uint8_t offset;    // bit offset in the uint8_t
+  uint8_t bits;      // bits in field
+  uint8_t inverted;  // if the bits should reversed before used as a number
 };
 
 const BitSegment bs_abs_temp          = { 4, 4, 4, 1};
@@ -57,7 +57,7 @@ const BitSegment bs_parity            = {12, 0, 4, 0};
 #define MODE_HEAT 0b10
 #define MODE_COOL 0b01
 #define MODE_DRY  0b11
-inline const char* mode_string(byte mode) {
+inline const char* mode_string(uint8_t mode) {
   switch (mode) {
     case MODE_FAN:  return "fan";
     case MODE_HEAT: return "heat";
@@ -73,7 +73,7 @@ inline const char* mode_string(byte mode) {
 #define STATE_CMD             0b110
 #define STATE_FULL_EFFECT_ON  0b011
 #define STATE_FULL_EFFECT_OFF 0b111
-inline const char* state_string(byte value) {
+inline const char* state_string(uint8_t value) {
   switch (value) {
     case STATE_ON:              return "on";
     case STATE_OFF:             return "off";
@@ -88,7 +88,7 @@ inline const char* state_string(byte value) {
 #define ROTATE_ON    0b011
 #define ROTATE_OFF   0b101
 #define ROTATE_SWING 0b111
-inline const char* rotate_string(byte value) {
+inline const char* rotate_string(uint8_t value) {
   switch (value) {
     case ROTATE_ON:    return "on";
     case ROTATE_OFF:   return "off";
@@ -100,7 +100,7 @@ inline const char* rotate_string(byte value) {
 // Values for bs_clean
 #define CLEAN_ON   0b01
 #define CLEAN_OFF  0b10
-inline const char* clean_string(byte value) {
+inline const char* clean_string(uint8_t value) {
   switch (value) {
     case CLEAN_ON:  return "on";
     case CLEAN_OFF: return "off";
@@ -113,7 +113,7 @@ inline const char* clean_string(byte value) {
 #define STRENGTH_MEDIUM 0b101
 #define STRENGTH_FAST   0b111
 #define STRENGTH_AUTO   0b010
-inline const char* strength_string(byte value) {
+inline const char* strength_string(uint8_t value) {
   switch (value) {
     case STRENGTH_SLOW:   return "slow";
     case STRENGTH_MEDIUM: return "medium";
@@ -126,7 +126,7 @@ inline const char* strength_string(byte value) {
 // Values for bs_ion
 #define ION_ON  0b1
 #define ION_OFF 0b0
-inline const char* ion_string(byte value) {
+inline const char* ion_string(uint8_t value) {
   switch (value) {
     case ION_ON:  return "on";
     case ION_OFF: return "off";
@@ -137,15 +137,15 @@ inline const char* ion_string(byte value) {
 // Transmit the ir_data bits.
 void ir_data_send();
 
-byte calculate_parity(byte* ir_buffer);
+uint8_t calculate_parity(uint8_t* ir_buffer);
 
-void replace_ir_data(byte data[NUM_IR_BYTES]);
+void replace_ir_data(uint8_t data[NUM_IR_BYTES]);
 
 // Update the IR data package with the correct 4 bit parity.
 void ir_data_update_parity();
 
-// Invert the 'bits' number of bits in the 'value' byte.
-byte invert(byte value, byte bits);
+// Invert the 'bits' number of bits in the 'value' uint8_t.
+uint8_t invert(uint8_t value, uint8_t bits);
 
 // Helper macros to extract and set values in the BitSegments.
 

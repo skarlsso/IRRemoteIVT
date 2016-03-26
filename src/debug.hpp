@@ -1,6 +1,8 @@
 #ifndef IRREMOTEIVT_DEBUG_HPP
 #define IRREMOTEIVT_DEBUG_HPP
 
+#include "globals.hpp"
+
 // Debugging aid to dump all IR data bits.
 #define dump_all_ir_data 0
 

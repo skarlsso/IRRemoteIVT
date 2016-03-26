@@ -1,3 +1,5 @@
+#include "globals.hpp"
+
 #include "commands.hpp"
 #include "serial.hpp"
 #include "utils.hpp"
@@ -11,7 +13,7 @@ void commands_loop(boolean (*execute_command_function)(char*, int, boolean)) {
   static int saved_length = 0;
 
   if (SerialUI.available() > 0) {
-    byte data = SerialUI.read();
+    uint8_t data = SerialUI.read();
 
     if (length >= 0) {
       if (is_eol(data)) {

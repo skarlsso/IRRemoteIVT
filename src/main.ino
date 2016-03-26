@@ -1,3 +1,5 @@
+#include "globals.hpp"
+
 #include "commands.hpp"
 #include "low-level.hpp"
 #include "serial.hpp"
@@ -22,7 +24,7 @@ void loop()  {
   // Execute the full version, with the entire remote controller state machine implemented in the Arduino.
   commands_loop(&execute_commands_full);
 #else
-  // Execute the minimal version, which only sends raw bytes to the heat pump.
+  // Execute the minimal version, which only sends raw uint8_ts to the heat pump.
   // The remote controller state machine is implemented externally.
   commands_loop(&execute_commands_minimal);
 #endif
