@@ -233,8 +233,6 @@ void ir_data_send() {
   // The timer will be turned off when the entire IR data package has been sent out.
 }
 
-void setup_serial();
-
 void setup_low_level()  {
   pinMode(TX_PIN,     OUTPUT);
   pinMode(RX_PIN,     INPUT);
