@@ -3,7 +3,7 @@
 
 #include "globals.hpp"
 
-void commands_loop(boolean (*execute_command_function)(char*, int, boolean));
+void commands_loop(bool (*execute_command_function)(char*, int, bool));
 
 #define execute_command_cond(command_str, command)                                      \
   do {                                                                                  \

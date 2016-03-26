@@ -16,8 +16,8 @@ void setup() {
   setup_serial();
 }
 
-boolean execute_commands_full(char *buffer, int length, boolean send_ir);
-boolean execute_commands_minimal(char *buffer, int length, boolean send_ir);
+bool execute_commands_full(char *buffer, int length, bool send_ir);
+bool execute_commands_minimal(char *buffer, int length, bool send_ir);
 
 void loop()  {
 #if BUILD_FULL

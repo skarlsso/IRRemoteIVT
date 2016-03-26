@@ -5,7 +5,7 @@
 #include "utils.hpp"
 
 // Main loop - Reads and acts on commands sent to the SerialUI port.
-void commands_loop(boolean (*execute_command_function)(char*, int, boolean)) {
+void commands_loop(bool (*execute_command_function)(char*, int, bool)) {
   const int BUFFER_SIZE = 64;
   // +1 to always be able to end the command with '\0'
   static char buffer[BUFFER_SIZE + 1];

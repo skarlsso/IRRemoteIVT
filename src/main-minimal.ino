@@ -27,7 +27,7 @@
 #include "serial.hpp"
 #include "utils.hpp"
 
-static void execute_raw(char *buffer, int length, boolean send_ir) {
+static void execute_raw(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);
 
   if (length != NUM_IR_BYTES * 2) {
@@ -68,7 +68,7 @@ static void execute_raw(char *buffer, int length, boolean send_ir) {
   }
 }
 
-boolean execute_commands_minimal(char *buffer, int length, boolean send_ir) {
+bool execute_commands_minimal(char *buffer, int length, bool send_ir) {
   execute_command_cond("raw", raw);
 
   SerialUI.write("No such command: '");
