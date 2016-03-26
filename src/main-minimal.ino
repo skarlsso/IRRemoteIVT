@@ -18,6 +18,7 @@
 
 #include "commands.hpp"
 #include "debug.hpp"
+#include "ir-data.hpp"
 #include "low-level.hpp"
 #include "serial.hpp"
 #include "utils.hpp"

@@ -23,6 +23,8 @@
 
 #include "commands.hpp"
 #include "debug.hpp"
+#include "ir-data.hpp"
+#include "ir-data-description.hpp"
 #include "low-level.hpp"
 #include "serial.hpp"
 #include "utils.hpp"

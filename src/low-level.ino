@@ -4,6 +4,7 @@
 
 #include "globals.hpp"
 
+#include "ir-data.hpp"
 #include "low-level.hpp"
 
 // Pin mapping
@@ -14,55 +15,6 @@
 
 // The IR pin must match the Output Compare pin for OC1A.
 #define IR_PIN     9
-// The IR data package.
-//
-// Bytes containing the state which will be send upon request.
-// This following values are a reasonable default.
-volatile uint8_t ir_data[NUM_IR_BYTES] =
-   { 0x55,    0x5A,    0xF3,    0x08,    0x00,    0x88,    0x04,    0x00,    0x10,    0x01,    0x00,    0x0F,    0x88 };
- //  Always the same____________________ TEMP  0  1000XXX  MO  FAN  x60m_    RRX10000 00000001 MINUTS 0 00N01111 1000CRC_
- //  01010101 01011010 11110011 00001000 00000000 10001000 00000100 00000000 00010000 00000001 00000000 00001111 10001000
-
-// Invert the 'bits' number of bits in the 'value' uint8_t.
-uint8_t invert(uint8_t value, uint8_t bits) {
-  uint8_t inverted = 0;
-  for (int i = 0; i < bits; i++) {
-    inverted <<= 1;
-    inverted |= value & 1;
-    value >>= 1;
-  }
-
-  return inverted;
-}
-
-void replace_ir_data(uint8_t data[NUM_IR_BYTES]) {
-  for (int i = 0; i < NUM_IR_BYTES; i++) {
-    ir_data[i] = data[i];
-  }
-}
-
-
-uint8_t calculate_parity(uint8_t* ir_buffer) {
-  uint8_t parity = 0;
-
-  // Calculate 8 uint8_ts parity, including the previous parity.
-  for (int i = 0; i < NUM_IR_BYTES; i++) {
-    parity ^= ir_buffer[i];
-  }
-
-  // 8 uint8_ts parity => 4 uint8_ts parity
-  parity ^= (parity >> 4);
-  parity &= 0x0F;
-
-  // xor:ing will get rid of previous parity.
-  return (ir_buffer[NUM_IR_BYTES - 1] ^ parity) & 0x0F;
-}
-
-// Update the IR data package with the correct 4 bit parity.
-void ir_data_update_parity() {
-  ir_data[NUM_IR_BYTES - 1] &= 0xF0;
-  ir_data[NUM_IR_BYTES - 1] |= calculate_parity((uint8_t*)ir_data);
-}
 
 #define FORCE_16MHZ 1
 

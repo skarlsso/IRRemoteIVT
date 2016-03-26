@@ -1,7 +1,7 @@
 #include "globals.hpp"
 
 #include "serial.hpp"
-#include "low-level.hpp"
+#include "ir-data.hpp"
 
 void dump_ir_data() {
   for (int i = 0; i < NUM_IR_BYTES; i++) {
