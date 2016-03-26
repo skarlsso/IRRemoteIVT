@@ -44,25 +44,29 @@ static void setup_modulation_timer() {
 }
 
 static void setup_IR_tick_timer() {
-  // Timer 0 is time the ticks in the IR signal train of one IR data package.
-  TCCR0A = 0;
-  TCCR0B = 0;
-  TCNT0  = 0;
+  // Uses Timer 3, since using Timer 0 on Leonardo/Micro causes lock-ups.
+
+  // Timer 3 is time the ticks in the IR signal train of one IR data package.
+  TCCR3A = 0;
+  TCCR3B = 0;
+  TCNT3L = 0;
+  TCNT3H = 0;
 
   // Clear Timer on Compare Match (CTC) Mode.
-  TCCR0A = _BV(WGM01);
+  TCCR3B = _BV(WGM32);
 
  // Don't enable the clock source yet.
-# define CLOCK_SELECT (_BV(CS01) | _BV(CS00))  // clk1/8
+ # define CLOCK_SELECT (_BV(CS01) | _BV(CS00))  // clk1/64
 
   // 0.45 ms - 8MHz or 16Mhz /w 8 prescaler
-  OCR0A = 58 * TIME_MULTIPLIER;
+  OCR3AL = 58 * TIME_MULTIPLIER;
+  OCR3AH = 0;
 
   // Make sure the interrupt bits are cleared before interrupts are enabled.
-  TIFR0 |= (_BV(OCF0A) | _BV(OCF0B));
+  TIFR3 |= (_BV(OCF3A));
 
   //TIMSK0 = _BV(OCIE0A); // Enable interrupt.
-  TIMSK0 = _BV(OCIE0A); // Enable interrupt
+  TIMSK3 = _BV(OCIE3A); // Enable interrupt
 }
 
 // Turn off the 38 kHz modulation.
@@ -88,14 +92,14 @@ static void turn_on_IR_ticks_timer() {
   //digitalWrite(IR_PIN, HIGH);
   // Start Timer 3 to clock out all IR data.
   // Set the time to one before OC to immediately trigger a Output Compare event.
-  TCNT0   = OCR0A - 1;
+  TCNT3L   = OCR3AL - 1;
   // Turn on clock
-  TCCR0B |= CLOCK_SELECT;
+  TCCR3B |= CLOCK_SELECT;
 }
 
 void turn_off_IR_ticks_timer() {
   //digitalWrite(IR_PIN, LOW);
-  TCCR0B &= ~CLOCK_SELECT  ; // Turn off clock
+  TCCR3B &= ~CLOCK_SELECT  ; // Turn off clock
 }
 
 // The Timer 1 Output Capture is turned on at the end of a 'HIGH' tick in the IR pulse train,
@@ -109,7 +113,7 @@ ISR(TIMER1_COMPA_vect) {
 
 // Interrupt routine for the Timer 3 Output Compare.
 // Handles the timing needed to send the IR data package.
-ISR(TIMER0_COMPA_vect) {
+ISR(TIMER3_COMPA_vect) {
   // ISR local variables
   static uint8_t ir_send_state    = 0;
   static uint8_t ir_send_uint8_t     = 0;
