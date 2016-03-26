@@ -5,6 +5,8 @@
 #include "utils.hpp"
 
 // Main loop - Reads and acts on commands sent to the SerialUI port.
+//
+// @param execute_command_function Implements the command handling logic.
 void commands_loop(bool (*execute_command_function)(char*, int, bool)) {
   const int BUFFER_SIZE = 64;
   // +1 to always be able to end the command with '\0'
@@ -43,10 +45,10 @@ void commands_loop(bool (*execute_command_function)(char*, int, bool)) {
         }
       }
     } else {
-      SerialDebug.println("Overflow handling");
+      SerialUI.println("Overflow handling");
       // Overflow handling. Drain incomming data until end-of-line is found.
       if (is_eol(data)) {
-        SerialDebug.println("Overflow done");
+        SerialUI.println("Overflow done");
         length = 0;
       }
     }
