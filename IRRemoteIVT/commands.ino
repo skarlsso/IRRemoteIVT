@@ -1,8 +1,8 @@
-#include "globals.hpp"
+#include "globals.h"
 
-#include "commands.hpp"
-#include "serial.hpp"
-#include "utils.hpp"
+#include "commands.h"
+#include "serial.h"
+#include "utils.h"
 
 // Main loop - Reads and acts on commands sent to the SerialUI port.
 void commands_loop(bool (*execute_command_function)(char*, int, bool)) {

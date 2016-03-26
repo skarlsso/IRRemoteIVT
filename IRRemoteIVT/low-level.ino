@@ -2,10 +2,10 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
-#include "globals.hpp"
+#include "globals.h"
 
-#include "ir-data.hpp"
-#include "low-level.hpp"
+#include "ir-data.h"
+#include "low-level.h"
 
 // Pin mapping
 #define TX_PIN     0

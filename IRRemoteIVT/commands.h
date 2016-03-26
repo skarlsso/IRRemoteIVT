@@ -1,10 +1,10 @@
 #ifndef IRREMOTEIVT_COMMANDS_HPP
 #define IRREMOTEIVT_COMMANDS_HPP
 
-#include "globals.hpp"
+#include "globals.h"
 
-#include "serial.hpp"
-#include "utils.hpp"
+#include "serial.h"
+#include "utils.h"
 
 void commands_loop(bool (*execute_command_function)(char*, int, bool));
 

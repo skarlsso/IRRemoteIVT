@@ -19,15 +19,15 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
-#include "globals.hpp"
+#include "globals.h"
 
-#include "commands.hpp"
-#include "debug.hpp"
-#include "ir-data.hpp"
-#include "ir-data-description.hpp"
-#include "low-level.hpp"
-#include "serial.hpp"
-#include "utils.hpp"
+#include "commands.h"
+#include "debug.h"
+#include "ir-data.h"
+#include "ir-data-description.h"
+#include "low-level.h"
+#include "serial.h"
+#include "utils.h"
 
 // Make the IR data package complete and send it out to the IR port.
 static void ir_data_finalize_and_send(uint8_t state, bool send_ir, uint8_t debug = 0) {

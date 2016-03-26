@@ -1,4 +1,4 @@
-#include "ir-data.hpp"
+#include "ir-data.h"
 
 // The IR data package.
 //

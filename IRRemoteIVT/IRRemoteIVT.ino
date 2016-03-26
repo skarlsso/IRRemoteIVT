@@ -5,11 +5,11 @@
 // version depending on the compiler flags used.
 //
 // @author Stefan Karlsson (skarlsso@github)
-#include "globals.hpp"
+#include "globals.h"
 
-#include "commands.hpp"
-#include "low-level.hpp"
-#include "serial.hpp"
+#include "commands.h"
+#include "low-level.h"
+#include "serial.h"
 
 #ifndef BUILD_FULL
 #define BUILD_FULL 1

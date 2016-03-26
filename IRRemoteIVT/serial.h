@@ -1,7 +1,7 @@
 #ifndef IRREMOTEIVT_SERIAL_HPP
 #define IRREMOTEIVT_SERIAL_HPP
 
-#include "globals.hpp"
+#include "globals.h"
 
 // Setup what serial ports to use.
 //

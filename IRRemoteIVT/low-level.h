@@ -1,7 +1,7 @@
 #ifndef IRREMOTEIVT_LOW_LEVEL_HPP
 #define IRREMOTEIVT_LOW_LEVEL_HPP
 
-#include "globals.hpp"
+#include "globals.h"
 
 void setup_low_level();
 

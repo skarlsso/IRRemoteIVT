@@ -14,14 +14,14 @@
 //
 // @author Stefan Karlsson (skarlsso@github)
 
-#include "globals.hpp"
+#include "globals.h"
 
-#include "commands.hpp"
-#include "debug.hpp"
-#include "ir-data.hpp"
-#include "low-level.hpp"
-#include "serial.hpp"
-#include "utils.hpp"
+#include "commands.h"
+#include "debug.h"
+#include "ir-data.h"
+#include "low-level.h"
+#include "serial.h"
+#include "utils.h"
 
 static void execute_raw(char *buffer, int length, bool send_ir) {
   TRIM(buffer, length);

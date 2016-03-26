@@ -1,7 +1,7 @@
-#include "globals.hpp"
+#include "globals.h"
 
-#include "ir-data-description.hpp"
-#include "ir-data.hpp"
+#include "ir-data-description.h"
+#include "ir-data.h"
 
 // Helper functions to extract and set values in the BitSegments.
 
