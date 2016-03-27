@@ -30,3 +30,5 @@ The sketch can also be used with the Arduino IDE.
 * By default Serial is used for communication. Can be changed in serial.h.
   * On Arduino Micro, this means the serial port through the USB, by default. Change it to Serial1 to use Pin 0/1.
 
+### Schematic
+* https://github.com/skarlsso/IRRemoteIVT/blob/master/schematics/kicad/IRRemoteIVT-schematic.png
