@@ -27,5 +27,5 @@ The sketch can also be used with the Arduino IDE.
 ### Pin Mapping
 * Pin 9 drives the LED pulses
 * By default Serial is used for communication. Can be changed in serial.h.
-** On Arduino Micro, this means the serial port through the USB, by default. Change it to Serial1, to use Pin 0/1.
+  * On Arduino Micro, this means the serial port through the USB, by default. Change it to Serial1, to use Pin 0/1.
 
