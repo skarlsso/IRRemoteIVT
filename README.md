@@ -5,6 +5,7 @@ Control the IVT Nordic Inverter heat pump by sending commands to the serial port
 Together with an Internet connected device, like a Raspberry Pi, this could also be used to control the heat pump remotely.
 
 ### Examples of commands:
+* help - Print the help text
 * on   - Turn on the heat pump
 * off  - Turn off the heat pump
 * heat - Turn on heating
@@ -27,5 +28,5 @@ The sketch can also be used with the Arduino IDE.
 ### Pin Mapping
 * Pin 9 drives the LED pulses
 * By default Serial is used for communication. Can be changed in serial.h.
-  * On Arduino Micro, this means the serial port through the USB, by default. Change it to Serial1, to use Pin 0/1.
+  * On Arduino Micro, this means the serial port through the USB, by default. Change it to Serial1 to use Pin 0/1.
 
