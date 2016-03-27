@@ -5,7 +5,7 @@
 
 // Helper functions to extract and set values in the BitSegments.
 
-// Invert the 'bits' number of bits in the 'value' uint8_t.
+// Invert the 'bits' number of bits in the 'value' byte.
 static uint8_t invert(uint8_t value, uint8_t bits) {
   uint8_t inverted = 0;
   for (int i = 0; i < bits; i++) {

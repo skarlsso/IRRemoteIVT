@@ -16,12 +16,12 @@ inline void replace_ir_data(uint8_t data[NUM_IR_BYTES]) {
 inline uint8_t calculate_parity(uint8_t* ir_buffer) {
   uint8_t parity = 0;
 
-  // Calculate 8 uint8_ts parity, including the previous parity.
+  // Calculate 8 bytes parity, including the previous parity.
   for (int i = 0; i < NUM_IR_BYTES; i++) {
     parity ^= ir_buffer[i];
   }
 
-  // 8 uint8_ts parity => 4 uint8_ts parity
+  // 8 bytes parity => 4 bytes parity
   parity ^= (parity >> 4);
   parity &= 0x0F;
 

@@ -3,8 +3,8 @@
 
 // The BitSegment describes segments of the IR package.
 struct BitSegment {
-  uint8_t index;     // uint8_t position in the IR package
-  uint8_t offset;    // bit offset in the uint8_t
+  uint8_t index;     // byte position in the IR package
+  uint8_t offset;    // bit offset in the byte
   uint8_t bits;      // bits in field
   uint8_t inverted;  // if the bits should reversed before used as a number
 };

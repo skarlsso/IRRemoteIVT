@@ -40,7 +40,7 @@ inline int a_to_positive_number(char* buffer, int length) {
 // Setup to expect '\r' as the end-of-line marker.
 #define is_eol(data) ((char)data == '\r')
 
-#define TRIM(buffer, length)                 \
+#define TRIM(buffer, length)                  \
   do {                                        \
     while (length > 0 && buffer[0] == ' ') {  \
       buffer++;                               \
