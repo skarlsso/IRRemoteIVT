@@ -64,8 +64,16 @@ static void execute_raw(char *buffer, int length, bool send_ir) {
   }
 }
 
+static void execute_minimal_help(char *buffer, int length, bool transmit /* ignored */) {
+  SerialUI.println("Commands:");
+  SerialUI.println("  help - Print this help text");
+  SerialUI.println("  raw  - Send the raw ir data bytes");
+  SerialUI.println("         E.g. \"raw 555AF308008804001001000F88\"");
+}
+
 bool execute_commands_minimal(char *buffer, int length, bool send_ir) {
-  execute_command_cond("raw", raw);
+  execute_command_cond("raw",  raw);
+  execute_command_cond("help", minimal_help);
 
   SerialUI.write("No such command: '");
   SerialUI.write((uint8_t*)buffer, length);
