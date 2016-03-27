@@ -1,1 +1,5 @@
 .pioenvs
+.DS_Store
+schematics/kicad/IRRemoteIVT-cache.lib
+schematics/kicad/IRRemoteIVT.bak
+schematics/kicad/IRRemoteIVT.kicad_pcb
